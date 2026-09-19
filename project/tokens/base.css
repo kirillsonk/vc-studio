@@ -1,0 +1,8 @@
+html{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+body{margin:0;background:var(--bg);color:var(--text);font:var(--type-body)}
+a{color:var(--brand);text-decoration:none;transition:color var(--dur-micro) var(--ease)}
+a:hover{color:var(--brand-hover)}
+:focus-visible{outline:var(--focus-outline);outline-offset:var(--focus-offset)}
+::selection{background:var(--brand-soft);color:var(--ink)}
+.num,[data-num]{font-feature-settings:var(--num-features);font-variant-numeric:tabular-nums lining-nums}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}

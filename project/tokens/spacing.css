@@ -1,0 +1,32 @@
+:root{
+--space-1:4px;
+--space-2:8px;
+--space-3:12px;
+--space-4:16px;
+--space-5:24px;
+--space-6:32px;
+--space-7:48px;
+--space-8:64px;
+--space-9:96px;
+--space-10:128px;
+--space-11:160px;
+/* grid */
+--grid-columns:12; /* @kind other */
+--grid-gutter:24px;
+--container-max:1400px;
+--container-pad:56px;
+--container-pad-tablet:32px;
+--container-pad-mobile:20px;
+--section-gap:var(--space-10);
+--section-gap-mobile:var(--space-9);
+/* radii — small; 12 only for large interactive canvases */
+--radius-sm:4px;
+--radius-md:8px;
+--radius-lg:12px;
+/* controls */
+--control-h-sm:40px;
+--control-h-md:48px;
+--control-h-lg:56px;
+--input-h:56px;
+--header-h:80px;
+}
