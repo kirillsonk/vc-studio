@@ -47,11 +47,14 @@ export function ProductionCanvas() {
           );
         })}
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, paddingTop: 24, opacity: step > 3 ? 1 : 0, transition: 'opacity var(--dur-reveal) var(--ease)' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}><span style={{ font: 'var(--type-caption)', color: 'var(--text-3)' }}>AI-расход этой сборки</span><Counter value={tokens} size="md" suffix=" токенов" style={{ fontSize: 'clamp(22px,2vw,30px)' }} /></div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}><span style={{ font: 'var(--type-caption)', color: 'var(--text-3)' }}>Фактическая стоимость моделей</span><Counter value={cost} size="md" suffix=" ₽" style={{ fontSize: 'clamp(22px,2vw,30px)' }} /></div>
+      <div style={{ paddingTop: 24, opacity: step > 3 ? 1 : 0, transition: 'opacity var(--dur-reveal) var(--ease)' }}>
+        <span style={{ font: 'var(--type-label-sm)', color: 'var(--text)' }}>Эта страница собрана с AI</span>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, paddingTop: 14 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}><Counter value={tokens} size="md" style={{ fontSize: 'clamp(22px,2vw,30px)' }} /><span style={{ font: 'var(--type-caption)', color: 'var(--text-3)' }}>токенов ушло на сборку</span></div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}><Counter value={cost} size="md" suffix=" ₽" style={{ fontSize: 'clamp(22px,2vw,30px)' }} /><span style={{ font: 'var(--type-caption)', color: 'var(--text-3)' }}>столько стоили модели</span></div>
+        </div>
       </div>
-      <span style={{ font: 'var(--type-caption)', color: 'var(--text-3)', paddingTop: 16, opacity: step > 4 ? 1 : 0, transition: 'opacity var(--dur-reveal)' }}>Счетчик показывает, сколько контекста и генерации потребовалось модели для этого демо. Без наценки на AI-инфраструктуру</span>
+      <span style={{ font: 'var(--type-caption)', color: 'var(--text-3)', paddingTop: 16, opacity: step > 4 ? 1 : 0, transition: 'opacity var(--dur-reveal)' }}>По вашему проекту покажем такой же расчет после запуска. Без наценки на AI-инфраструктуру</span>
     </div>
   );
 }
