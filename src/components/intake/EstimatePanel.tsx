@@ -23,7 +23,7 @@ export function EstimatePanel({ scope = [], term, budget, status = 'empty', onCo
       {status === 'empty' && scope.length === 0 ? (
         <div style={{ padding: '40px 0 24px', display: 'flex', flexDirection: 'column', gap: 6 }}>
           <span style={{ font: 'var(--type-body)', color: 'var(--text)' }}>Здесь появится предварительная оценка</span>
-          <span style={{ font: 'var(--type-body-sm)', color: 'var(--text-3)' }}>Ответьте на несколько вопросов о проекте.</span>
+          <span style={{ font: 'var(--type-body-sm)', color: 'var(--text-3)' }}>Ответьте на несколько вопросов о проекте</span>
         </div>
       ) : (
         <>
@@ -34,7 +34,7 @@ export function EstimatePanel({ scope = [], term, budget, status = 'empty', onCo
           <div style={{ ...row, borderBottom: 'none' }}><span style={{ font: 'var(--type-body-sm)', color: 'var(--text-2)' }}>Предварительный бюджет</span><span data-num style={{ font: 'var(--type-num-md)', letterSpacing: 'var(--track-num)', color: budget ? 'var(--text)' : 'var(--text-3)', fontFeatureSettings: 'var(--num-features)' }}>{budget || '—'}</span></div>
           {status === 'ready' && (
             <>
-              <span style={{ font: 'var(--type-caption)', color: 'var(--text-3)', paddingBottom: 16 }}>Это автоматическая оценка. Перед стартом инженер проверит scope и подтвердит стоимость.</span>
+              <span style={{ font: 'var(--type-caption)', color: 'var(--text-3)', paddingBottom: 16 }}>Это автоматическая оценка. Перед стартом инженер проверит scope и подтвердит стоимость</span>
               <button type="button" onClick={onConfirm} style={{ height: 'var(--control-h-md)', borderRadius: 'var(--radius-md)', border: 'none', background: 'var(--brand)', color: '#fff', font: 'var(--type-label)', fontFamily: 'var(--font-sans)', cursor: 'pointer' }}>{confirmLabel}</button>
             </>
           )}

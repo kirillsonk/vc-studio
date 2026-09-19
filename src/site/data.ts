@@ -1,31 +1,39 @@
-/** Demo content for the reference screens. Every figure here is placeholder data — replace with real project values. */
+/** Demo content for the reference screens. Every figure here is placeholder data */
 
-export interface CaseEntry {
-  slug: string;
+/**
+ * The site shows a single demonstration project instead of client cases: there are none yet,
+ * and the brand does not invent social proof. The project is built for this site and labelled as such
+ */
+export interface DemoCase {
+  index: string;
   kind: string;
-  year: string;
-  client: string;
   title: string;
+  lead: string;
   days: number;
   budget: number;
-  /** flat colour plate + wordmark standing in for a real still */
+  aiCost: number;
+  tokens: number;
+  /** flat colour plate + wordmark standing in for the real build */
   media: { c: string; t: string; fg?: string };
-  ratio?: string;
-  size?: 'md' | 'lg';
 }
 
-export const CASES: CaseEntry[] = [
-  { slug: 'coffee-run', kind: 'Веб-игра', year: '2026', client: 'Сеть кофеен', title: 'Промо-игра с лидербордом и промокодами', days: 9, budget: 184000, media: { c: 'var(--vermilion)', t: 'Coffee Run' }, ratio: '16/10', size: 'lg' },
-  { slug: 'quarter', kind: '3D / WebGL', year: '2026', client: 'Застройщик', title: 'Квартал в браузере', days: 14, budget: 412000, media: { c: 'var(--ink)', t: 'Quarter' } },
-  { slug: 'launch', kind: 'Промо-сайт', year: '2026', client: 'Банк', title: 'Запуск карты со scroll-механикой', days: 6, budget: 126500, media: { c: 'var(--surface-2)', t: 'Launch', fg: 'var(--text-3)' } },
-  { slug: 'season', kind: 'Спецпроект', year: '2026', client: 'FMCG', title: 'Интерактивный storytelling к сезонной кампании', days: 12, budget: 238000, media: { c: 'var(--brand-soft)', t: 'Season', fg: 'var(--brand)' }, ratio: '16/10', size: 'lg' },
-];
+export const DEMO_CASE: DemoCase = {
+  index: 'Демо-проект 01',
+  kind: 'Браузерная мини-игра',
+  title: 'Механика, собранная для этого сайта',
+  lead: 'Не клиентский кейс, а рабочий пример: короткая игровая сессия, лидерборд и промокод после прохождения. Показываем срок, бюджет и фактический AI-расход как в настоящем отчете',
+  days: 9,
+  budget: 184000,
+  aiCost: 18320,
+  tokens: 8421388,
+  media: { c: 'var(--vermilion)', t: 'Demo 01' },
+};
 
-/** Market reference used by every Compare on the site. */
+/** Market reference used by every Compare on the site */
 export const MARKET_REFERENCE: [number, number] = [450000, 650000];
-export const COMPARE_NOTE = 'Ориентир для сопоставимого объёма работ. Финальная стоимость зависит от задачи и состава команды.';
+export const COMPARE_NOTE = 'Ориентир для сопоставимого объема работ. Финальная стоимость зависит от задачи и состава команды';
 
-/** Per-stage breakdown behind the project report. */
+/** Per-stage breakdown behind the project report */
 export const REPORT_STAGES: Array<[stage: string, ai: number, team: number]> = [
   ['Прототип механики', 3210, 24000],
   ['Графика и анимация', 5480, 52000],

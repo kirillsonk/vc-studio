@@ -51,7 +51,7 @@ export function ProductionCanvas() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}><span style={{ font: 'var(--type-caption)', color: 'var(--text-3)' }}>AI-расход этой сборки</span><Counter value={tokens} size="md" suffix=" токенов" style={{ fontSize: 'clamp(22px,2vw,30px)' }} /></div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}><span style={{ font: 'var(--type-caption)', color: 'var(--text-3)' }}>Фактическая стоимость моделей</span><Counter value={cost} size="md" suffix=" ₽" style={{ fontSize: 'clamp(22px,2vw,30px)' }} /></div>
       </div>
-      <span style={{ font: 'var(--type-caption)', color: 'var(--text-3)', paddingTop: 16, opacity: step > 4 ? 1 : 0, transition: 'opacity var(--dur-reveal)' }}>Счётчик показывает, сколько контекста и генерации потребовалось модели для этого демо. Без наценки на AI-инфраструктуру.</span>
+      <span style={{ font: 'var(--type-caption)', color: 'var(--text-3)', paddingTop: 16, opacity: step > 4 ? 1 : 0, transition: 'opacity var(--dur-reveal)' }}>Счетчик показывает, сколько контекста и генерации потребовалось модели для этого демо. Без наценки на AI-инфраструктуру</span>
     </div>
   );
 }
@@ -69,10 +69,10 @@ export function Hero() {
     <Container style={{ paddingTop: 72 }}>
       <div className="grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(0,7fr) minmax(0,5fr)', gap: 'var(--grid-gutter)', alignItems: 'start' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 40 }}>
-          <h1 style={{ margin: 0, font: 'var(--type-display)', letterSpacing: 'var(--track-display)', maxWidth: 820, ...reveal(80) }}>Спецпроекты на скорости AI. С ответственностью студии.</h1>
+          <h1 style={{ margin: 0, font: 'var(--type-display)', letterSpacing: 'var(--track-display)', maxWidth: 820, ...reveal(80) }}>Спецпроекты на скорости AI. С ответственностью студии</h1>
           <div className="grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(0,4fr) minmax(0,3fr)', gap: 'var(--grid-gutter)', alignItems: 'start', ...reveal(240) }}>
-            <p className="pretty" style={{ margin: 0, font: 'var(--type-body-lg)', color: 'var(--text-2)' }}>Делаем промо-сайты, веб-игры, 3D и интерактивные продукты. AI берёт на себя большую часть написания кода, наша команда — архитектуру, качество и запуск.</p>
-            <p style={{ margin: 0, font: 'var(--type-body-sm)', color: 'var(--text-2)', paddingTop: 4, borderTop: '1px solid var(--line)' }}>Расход AI показываем по факту. Работу команды фиксируем заранее.</p>
+            <p className="pretty" style={{ margin: 0, font: 'var(--type-body-lg)', color: 'var(--text-2)' }}>Делаем промо-сайты, веб-игры, 3D и интерактивные продукты. AI берет на себя большую часть написания кода, наша команда — архитектуру, качество и запуск</p>
+            <p style={{ margin: 0, font: 'var(--type-body-sm)', color: 'var(--text-2)', paddingTop: 4, borderTop: '1px solid var(--line)' }}>Расход AI показываем по факту. Работу команды фиксируем заранее</p>
           </div>
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', ...reveal(360) }}>
             <Button size="lg" onClick={() => go(ROUTES.intake)}>Запустить проект</Button>

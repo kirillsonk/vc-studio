@@ -39,11 +39,11 @@ function FormsGroup() {
   return (
     <>
       <div className="grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px var(--grid-gutter)' }}>
-        <Field label="Email или Telegram" hint="Сюда отправим расчёт"><TextInput placeholder="@username" /></Field>
+        <Field label="Email или Telegram" hint="Сюда отправим расчет"><TextInput placeholder="@username" /></Field>
         <Field label="Email" error="Проверьте адрес почты"><TextInput error defaultValue="name@company" /></Field>
         <Field label="Формат"><Select placeholder="Выберите" options={['Промо-сайт', 'Веб-игра', '3D / WebGL', 'Интерактивный спецпроект']} /></Field>
         <Field label="Недоступно"><TextInput disabled defaultValue="Только после подтверждения scope" /></Field>
-        <Field label="Задача" style={{ gridColumn: '1 / -1' }}><Textarea rows={2} placeholder="Опишите проект своими словами. Можно без ТЗ." /></Field>
+        <Field label="Задача" style={{ gridColumn: '1 / -1' }}><Textarea rows={2} placeholder="Опишите проект своими словами. Можно без ТЗ" /></Field>
       </div>
       <Row label="OptionBlock — одиночный выбор" style={{ display: 'grid', gridTemplateColumns: 'repeat(4,minmax(0,1fr))', gap: 8 }}>
         {['Промо-сайт', 'Веб-игра', '3D / WebGL', 'Другое'].map(o => <OptionBlock key={o} selected={choice === o} onClick={() => setChoice(o)}>{o}</OptionBlock>)}
@@ -75,7 +75,7 @@ function NumbersGroup() {
           <Stat value={9} suffix=" дней" label="до запуска" size="md" />
           <Stat value={128000} prefix="−" suffix=" ₽" label="разница" tone="positive" size="md" />
         </div>
-        <Compare ours={180000} theirs={[450000, 650000]} note="Ориентир для сопоставимого объёма работ." />
+        <Compare ours={180000} theirs={[450000, 650000]} note="Ориентир для сопоставимого объема работ" />
       </div>
       <Ledger
         title="Project estimate"
@@ -86,7 +86,7 @@ function NumbersGroup() {
         ]}
         total={106840}
         totalLabel="Итоговый бюджет"
-        note="Финальная стоимость зависит от задачи и состава команды."
+        note="Финальная стоимость зависит от задачи и состава команды"
       />
     </div>
   );
@@ -136,14 +136,14 @@ export function KitPage() {
             <span data-num style={{ font: 'var(--type-index)', color: 'var(--text-3)', letterSpacing: '.04em' }}>DESIGN SYSTEM · 19 КОМПОНЕНТОВ</span>
             <h1 style={{ margin: 0, font: 'var(--type-h1)', letterSpacing: 'var(--track-h1)' }}>Библиотека компонентов</h1>
           </div>
-          <p className="pretty" style={{ margin: 0, font: 'var(--type-body-lg)', color: 'var(--text-2)' }}>Шесть групп примитивов, из которых собраны все экраны сайта. Правила использования — в BRAND.md.</p>
+          <p className="pretty" style={{ margin: 0, font: 'var(--type-body-lg)', color: 'var(--text-2)' }}>Шесть групп примитивов, из которых собраны все экраны сайта. Правила использования — в BRAND.md</p>
         </div>
 
-        <Group index="01" title="Кнопки" subtitle="Primary — заливка вермильоном. Secondary — 1 px граница. Tertiary — текст с базовой линией, которая рисуется на hover.">
+        <Group index="01" title="Кнопки" subtitle="Primary — заливка вермильоном. Secondary — 1 px граница. Tertiary — текст с базовой линией, которая рисуется на hover">
           <Row label="primary · secondary · tertiary">
             <Button>Запустить проект</Button>
             <Button variant="secondary">Смотреть кейсы</Button>
-            <Button variant="tertiary">Открыть отчёт</Button>
+            <Button variant="tertiary">Открыть отчет</Button>
           </Row>
           <Row label="размеры · loading">
             <Button size="sm">Открыть кейс</Button>
@@ -157,15 +157,15 @@ export function KitPage() {
           </Row>
         </Group>
 
-        <Group index="02" title="Формы" subtitle="Поля 56 px, белые, 1 px линия. Фокус — вермильоновая граница и мягкое кольцо. Выбор — прямоугольные блоки, не таблетки.">
+        <Group index="02" title="Формы" subtitle="Поля 56 px, белые, 1 px линия. Фокус — вермильоновая граница и мягкое кольцо. Выбор — прямоугольные блоки, не таблетки">
           <FormsGroup />
         </Group>
 
-        <Group index="03" title="Числа" subtitle="Табличные цифры во всех состояниях. Ledger — язык сметы, а не SaaS-тарифов. Compare — две полосы вместо перечёркнутых цен.">
+        <Group index="03" title="Числа" subtitle="Табличные цифры во всех состояниях. Ledger — язык сметы, а не SaaS-тарифов. Compare — две полосы вместо перечеркнутых цен">
           <NumbersGroup />
         </Group>
 
-        <Group index="04" title="Контент" subtitle="Визуал кейса сам является карточкой, текст лежит на canvas. Trace — фирменный мотив прохождения проекта через production.">
+        <Group index="04" title="Контент" subtitle="Визуал кейса сам является карточкой, текст лежит на canvas. Trace — фирменный мотив прохождения проекта через production">
           <div className="grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--grid-gutter)' }}>
             <CaseCard kind="Веб-игра" year="2026" client="Сеть кофеен" title="Промо-игра с лидербордом и промокодами" days={9} budget={184000} media={<Media c="var(--vermilion)" t="Coffee Run" />} />
             <CaseCard kind="3D / WebGL" year="2026" client="Застройщик" title="Квартал в браузере" days={14} budget={412000} media={<Media c="var(--ink)" t="Quarter" />} />
@@ -174,16 +174,16 @@ export function KitPage() {
           <Row label="Trace" style={{ display: 'block' }}><Trace active={2} /></Row>
         </Group>
 
-        <Group index="05" title="Демо" subtitle="Poster → loading → live. Тёмная поверхность допустима не более чем для одного демо на страницу.">
+        <Group index="05" title="Демо" subtitle="Poster → loading → live. Темная поверхность допустима не более чем для одного демо на страницу">
           <div className="grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--grid-gutter)' }}>
-            <DemoBlock title="Живой счётчик" meta="Live"><DemoLiveTokens /></DemoBlock>
+            <DemoBlock title="Живой счетчик" meta="Live"><DemoLiveTokens /></DemoBlock>
             <DemoBlock dark title="3D-конфигуратор" meta="WebGL · 60 FPS" autoload>
               <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', color: 'var(--contrast-ink-2)', font: 'var(--type-body-sm)' }}>здесь монтируется canvas</div>
             </DemoBlock>
           </div>
         </Group>
 
-        <Group index="06" title="Заявка" subtitle="Не чат-бот: у AI обычный абзац с индексом, у пользователя — текст с левой линейкой. Справа оценка достраивается по мере ответов.">
+        <Group index="06" title="Заявка" subtitle="Не чат-бот: у AI обычный абзац с индексом, у пользователя — текст с левой линейкой. Справа оценка достраивается по мере ответов">
           <IntakeGroup />
         </Group>
       </Container>

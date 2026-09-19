@@ -42,7 +42,7 @@ interface Estimate { scope: string[]; term?: string; budget?: string; status: 'e
 
 export function Intake() {
   const [log, setLog] = React.useState<Line[]>([
-    { r: 'ai', t: 'Расскажите, что хотите запустить. Можно без ТЗ. Я уточню несколько вещей и соберу предварительный scope, срок и вилку бюджета.', intro: true },
+    { r: 'ai', t: 'Расскажите, что хотите запустить. Можно без ТЗ. Я уточню несколько вещей и соберу предварительный scope, срок и вилку бюджета', intro: true },
     { r: 'ai', t: SCRIPT[0].q, i: 1 },
   ]);
   const [step, setStep] = React.useState(0);
@@ -70,7 +70,7 @@ export function Intake() {
       const n = step + 1;
       setStep(n);
       setPending(false);
-      setLog(l => [...l, n < SCRIPT.length ? { r: 'ai', t: SCRIPT[n].q, i: n + 1 } : { r: 'ai', t: 'Куда отправить расчёт и продолжить обсуждение?', i: n + 1 }]);
+      setLog(l => [...l, n < SCRIPT.length ? { r: 'ai', t: SCRIPT[n].q, i: n + 1 } : { r: 'ai', t: 'Куда отправить расчет и продолжить обсуждение?', i: n + 1 }]);
     }, 800);
   };
 
@@ -84,7 +84,7 @@ export function Intake() {
   return (
     <Section id="intake" pad={160} border>
       <div style={{ paddingTop: 48 }}>
-        <Head index="08" title="Есть задача — посчитаем production" lead="Опишите проект своими словами. Без технического брифа. За несколько вопросов соберём предварительный scope, срок и бюджет." />
+        <Head index="08" title="Есть задача — посчитаем production" lead="Опишите проект своими словами. Без технического брифа. За несколько вопросов соберем предварительный scope, срок и бюджет" />
         <div className="grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(0,7fr) minmax(0,5fr)', gap: 'var(--grid-gutter)', alignItems: 'start' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 24, borderTop: '1px solid var(--text)', paddingTop: 24 }}>
             <span style={{ font: 'var(--type-index)', color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '.04em' }}>Project brief</span>
@@ -105,7 +105,7 @@ export function Intake() {
                 <div><Button onClick={send}>Получить точную оценку</Button></div>
               </div>
             ) : (
-              <BriefMessage index={6}>Расчёт отправлен на {contact}. Инженер проверит scope и подтвердит стоимость перед стартом.</BriefMessage>
+              <BriefMessage index={6}>Расчет отправлен на {contact}. Инженер проверит scope и подтвердит стоимость перед стартом</BriefMessage>
             )}
           </div>
           <EstimatePanel scope={est.scope} term={est.term} budget={est.budget} status={est.status} onConfirm={() => contactRef.current?.focus()} style={{ position: 'sticky', top: 104 }} />

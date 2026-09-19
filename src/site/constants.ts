@@ -1,6 +1,6 @@
 /** Section anchors on the home page, in the order they appear. */
 export const HOME_SECTIONS: Array<[id: string, label: string]> = [
-  ['cases', 'Кейсы'],
+  ['cases', 'Проект'],
   ['process', 'Как работаем'],
   ['economics', 'Стоимость'],
   ['agencies', 'Для агентств'],

@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Onest } from 'next/font/google';
 import { Nav } from '@/site/Nav';
 import { Footer } from '@/site/Footer';
+import { PageTransition } from '@/site/PageTransition';
 import '@/styles/styles.css';
 
 const onest = Onest({
@@ -13,7 +14,7 @@ const onest = Onest({
 
 export const metadata: Metadata = {
   title: 'VC Studio — AI-native production',
-  description: 'Спецпроекты на скорости AI. С ответственностью студии. Промо-сайты, веб-игры, 3D и интерактивные продукты.',
+  description: 'Спецпроекты на скорости AI. С ответственностью студии. Промо-сайты, веб-игры, 3D и интерактивные продукты',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -21,7 +22,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="ru" className={onest.variable}>
       <body>
         <Nav />
-        {children}
+        <PageTransition>{children}</PageTransition>
         <Footer />
       </body>
     </html>

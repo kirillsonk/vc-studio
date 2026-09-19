@@ -21,10 +21,10 @@ export function ReportPage() {
         <Button variant="tertiary" size="sm" onClick={() => go(ROUTES.case)} style={{ alignSelf: 'flex-start' }}>К кейсу</Button>
         <div className="grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(0,7fr) minmax(0,5fr)', gap: 'var(--grid-gutter)', alignItems: 'end' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-            <span data-num style={{ font: 'var(--type-index)', color: 'var(--text-3)', letterSpacing: '.04em' }}>FINAL REPORT · COFFEE RUN · 14.09.2026</span>
+            <span data-num style={{ font: 'var(--type-index)', color: 'var(--text-3)', letterSpacing: '.04em' }}>FINAL REPORT · ДЕМО-ПРОЕКТ 01 · 14.09.2026</span>
             <h1 style={{ margin: 0, font: 'var(--type-h1)', letterSpacing: 'var(--track-h1)' }}>Из чего сложилась стоимость</h1>
           </div>
-          <p className="pretty" style={{ margin: 0, font: 'var(--type-body-lg)', color: 'var(--text-2)' }}>До старта клиенту не нужно разбираться в моделях, токенах и AI-инструментах. После запуска мы показываем production изнутри: что использовали, сколько это стоило и за какую работу отвечала команда.</p>
+          <p className="pretty" style={{ margin: 0, font: 'var(--type-body-lg)', color: 'var(--text-2)' }}>До старта клиенту не нужно разбираться в моделях, токенах и AI-инструментах. После запуска мы показываем production изнутри: что использовали, сколько это стоило и за какую работу отвечала команда</p>
         </div>
       </Container>
       <Container style={{ paddingTop: 64 }}>
@@ -37,7 +37,7 @@ export function ReportPage() {
             <div className="grid3" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,minmax(0,1fr))', gap: 'var(--grid-gutter)' }}>
               <Stat value={8421388} label="токенов" size="sm" />
               <Stat value={143} label="сборок" size="sm" />
-              <Stat value={9} suffix=" д." label="production" size="sm" />
+              <Stat value={9} suffix=" дней" label="production" size="sm" />
             </div>
           </div>
           <Ledger
@@ -96,17 +96,17 @@ export function ReportPage() {
           </table>
           </div>
         )}
-        <p style={{ margin: '16px 0 0', font: 'var(--type-caption)', color: 'var(--text-3)' }}>Демонстрационные данные. Ставки моделей различаются; стоимость показана по фактическим тарифам провайдеров без наценки.</p>
+        <p style={{ margin: '16px 0 0', font: 'var(--type-caption)', color: 'var(--text-3)' }}>Демонстрационные данные. Ставки моделей различаются; стоимость показана по фактическим тарифам провайдеров без наценки</p>
       </Container>
       <Container style={{ paddingTop: 96 }}>
         <div className="grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(0,7fr) minmax(0,5fr)', gap: 'var(--grid-gutter)', alignItems: 'center', padding: '32px 0', borderTop: '1px solid var(--line)', borderBottom: '1px solid var(--line)' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             <span style={{ font: 'var(--type-h4)', letterSpacing: 'var(--track-h4)' }}>3 месяца поддержки включены</span>
-            <span style={{ font: 'var(--type-body-sm)', color: 'var(--text-2)' }}>До 14.12.2026 — <span data-num style={{ color: 'var(--positive)' }}>0 ₽</span>. После — от 5 000 ₽ / мес.</span>
+            <span style={{ font: 'var(--type-body-sm)', color: 'var(--text-2)' }}>До 14.12.2026 — <span data-num style={{ color: 'var(--positive)' }}>0 ₽</span>. После от 5 000 ₽ в месяц</span>
           </div>
           <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
             <Button onClick={() => go(ROUTES.intake)} variant="secondary">Запустить похожий проект</Button>
-            <Button>Скачать отчёт</Button>
+            <Button>Скачать отчет</Button>
           </div>
         </div>
       </Container>
