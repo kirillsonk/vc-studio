@@ -1,0 +1,6 @@
+/* Keyframes used by design-system components. The exported prototypes inlined these in
+   per-instance <style> tags; here they live once, globally. Visual output is identical. */
+@keyframes vc-spin{to{transform:rotate(360deg)}}
+@keyframes vc-dot{0%,80%,100%{opacity:.25}40%{opacity:1}}
+@keyframes vc-in{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+@keyframes vc-turn{from{transform:perspective(900px) rotateY(-24deg) rotateX(8deg)}to{transform:perspective(900px) rotateY(24deg) rotateX(-8deg)}}

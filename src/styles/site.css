@@ -1,0 +1,42 @@
+/* Layout rules the prototype carried in ui_kits/site/index.html plus the two
+   text-wrap utilities its components set inline. */
+h1,h2,h3{text-wrap:balance}
+.pretty{text-wrap:pretty}
+
+html{scroll-behavior:smooth}
+[id]{scroll-margin-top:72px}
+
+.vc-header{position:sticky;top:0;z-index:var(--z-header)}
+
+/* Wide data tables stay readable on narrow screens instead of widening the page. */
+.table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.table-scroll>table{min-width:560px}
+
+@media(max-width:1100px){:root{--container-pad:32px}}
+
+@media(max-width:900px){
+  :root{
+    --container-pad:20px;
+    /* Editorial display sizes have to scale below the desktop floor: a 16-character
+       Russian word at 56px is wider than a 390px viewport. */
+    --type-display:500 clamp(34px,9vw,56px)/0.98 var(--font-sans);
+    --type-h1:500 clamp(32px,8.5vw,52px)/1.02 var(--font-sans);
+    --type-h2:500 clamp(28px,7vw,44px)/1.06 var(--font-sans);
+    --type-h3:500 clamp(24px,5.5vw,30px)/1.15 var(--font-sans);
+    --type-num-xl:500 clamp(40px,11vw,72px)/1 var(--font-sans);
+    --type-num-lg:500 clamp(32px,8vw,48px)/1 var(--font-sans);
+    --type-num-md:500 clamp(22px,5.5vw,30px)/1 var(--font-sans);
+  }
+  /* minmax(0,1fr), not 1fr — an `auto` minimum lets long words blow the track out. */
+  .grid{grid-template-columns:minmax(0,1fr)!important}
+  .grid3{grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important}
+  .nav-links{display:none!important}
+  section{padding-top:88px!important}
+  footer{margin-top:88px!important}
+}
+
+@media(max-width:560px){
+  .grid3{grid-template-columns:minmax(0,1fr)!important}
+}
+
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}

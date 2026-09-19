@@ -1,25 +1,70 @@
-# CODING AGENTS: READ THIS FIRST
+# VC Studio
 
-This is a **handoff bundle** from Claude Design (claude.ai/design).
+Сайт и дизайн-система AI-native production-студии: промо-сайты, digital-спецпроекты, интерактивные лендинги, веб-игры, браузерные 3D/WebGL-проекты.
 
-A user mocked up designs in HTML/CSS/JS using an AI design tool, then exported this bundle so a coding agent can implement the designs for real.
+**Стек:** Next.js 15 (App Router) · React 18 · TypeScript · CSS custom properties. Без CSS-in-JS и UI-библиотек — стилизация идёт через токены дизайн-системы.
 
-## What you should do — IMPORTANT
+## Быстрый старт
 
-**Read the chat transcripts first.** There are 1 chat transcript(s) in `chats/`. The transcripts show the full back-and-forth between the user and the design assistant — they tell you **what the user actually wants** and **where they landed** after iterating. Don't skip them. The final HTML files are the output, but the chat is where the intent lives.
+```bash
+npm install
+npm run dev      # http://localhost:3000
+npm run build    # production-сборка
+npm run typecheck
+```
 
-**Find the primary design file under `project/` and read it top to bottom.** The chat transcripts will tell you which file the user was last iterating on. Then **follow its imports**: open every file it pulls in (shared components, CSS, scripts) so you understand how the pieces fit together before you start implementing.
+## Маршруты
 
-**If anything is ambiguous, ask the user to confirm before you start implementing.** It's much cheaper to clarify scope up front than to build the wrong thing.
+| Путь | Экран |
+| --- | --- |
+| `/` | Главная: hero с живым production canvas, демо, кейсы, что делаем, экономика, сравнение моделей, процесс, агентства, FAQ, AI-заявка |
+| `/case` | Кейс проекта: факты, демо, задача/решение/срок, timeline, сравнение |
+| `/report` | Production-отчёт: итоговый бюджет, ledger, разбивка по этапам и по моделям |
+| `/kit` | Витрина дизайн-системы: 19 компонентов в шести группах со всеми состояниями |
 
-## About the design files
+## Структура
 
-The design medium is **HTML/CSS/JS** — these are prototypes, not production code. Your job is to **recreate them pixel-perfectly** in whatever technology makes sense for the target codebase (React, Vue, native, whatever fits). Match the visual output; don't copy the prototype's internal structure unless it happens to fit.
+```
+BRAND.md                  ← дизайн-код и Tone of Voice, source of truth
+src/
+  app/                    маршруты App Router + layout (шрифт, Nav, Footer)
+  components/             19 компонентов дизайн-системы в шести группах
+    actions/              Button
+    forms/                TextInput · Textarea · Select · Field · Checkbox · OptionBlock · Chip
+    numbers/              Counter · Stat · Ledger · Compare
+    content/              CaseCard · Tag · Trace
+    demo/                 DemoBlock
+    intake/               BriefMessage · BriefComposer · EstimatePanel
+    index.ts              публичный барель библиотеки
+  site/
+    Chrome.tsx            Container · Section · Head
+    Nav.tsx · Footer.tsx
+    constants.ts          навигация и маршруты
+    data.ts               demo-данные кейсов и отчёта
+    sections/             секции главной
+    pages/                CasePage · ReportPage · KitPage
+  styles/
+    styles.css            единая точка входа (@import-ы)
+    tokens/               colors · typography · spacing · effects · fonts · base
+    animations.css        keyframes компонентов
+    site.css              сетка, адаптив, утилиты
+project/                  исходный экспорт из Claude Design (прототипы, референс)
+chats/                    транскрипты проектирования
+```
 
-**Don't render these files in a browser or take screenshots unless the user asks you to.** Everything you need — dimensions, colors, layout rules — is spelled out in the source. Read the HTML and CSS directly; a screenshot won't tell you anything they don't.
+## Дизайн-система
 
-## Bundle contents
+Токены — CSS custom properties в `src/styles/tokens/`, подключаются одним файлом `src/styles/styles.css`.
 
-- `README.md` — this file
-- `chats/` — conversation transcripts (read these!)
-- `project/` — the `VC Studio Design System` project files (HTML prototypes, assets, components)
+Ключевое: canvas `#F5F5F2`, ink `#111214`, бренд — вермильон `#D9451A`, сигнальный зелёный `#0FAF7A` только для семантики (live, ready, включено, разница). Синий `#3157FF` — вторичный акцент для данных, не для кнопок. Одна гарнитура **Onest Variable** (self-hosted через `next/font/google`), все числа табличные. Радиусы 4 / 8 / 12, тени только у floating UI.
+
+Полные правила — в [`BRAND.md`](./BRAND.md). Любой новый текст и любое визуальное решение сверяются с ним.
+
+## Данные
+
+Все числа в интерфейсе — демонстрационные (`src/site/data.ts`). Список того, что нужно заменить реальными значениями перед публикацией, — в разделе 32 `BRAND.md`.
+
+## Источники
+
+- Дизайн-система собрана в [Claude Design](https://claude.ai/design); экспорт лежит в `project/`, транскрипты — в `chats/`.
+- Репозиторий: https://github.com/kirillsonk/vc-studio

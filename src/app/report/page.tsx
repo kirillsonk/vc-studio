@@ -1,0 +1,11 @@
+import type { Metadata } from 'next';
+import { ReportPage } from '@/site/pages/ReportPage';
+
+export const metadata: Metadata = {
+  title: 'Из чего сложилась стоимость — VC Studio',
+  description: 'Production-отчёт по проекту: AI-расход, работа команды и итоговый бюджет.',
+};
+
+export default function Page() {
+  return <ReportPage />;
+}
