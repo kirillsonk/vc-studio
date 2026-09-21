@@ -1,4 +1,4 @@
-/* VC Studio — editorial direction, September 2026 */
+/* VC Studio - editorial direction, September 2026 */
 * {
   box-sizing: border-box;
 }
@@ -1726,5 +1726,322 @@ svg {
 @media (max-width: 650px) {
   .editorial-section[id] {
     scroll-margin-top: 20px;
+  }
+}
+
+/* Approach, cost model, and lightweight contact flow. */
+.vibe-definition {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 36px;
+  padding: 28px 0;
+  margin-top: 48px;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+.vibe-definition > span {
+  font-size: 20px;
+  font-weight: 500;
+}
+.vibe-definition p {
+  font-size: 18px;
+  line-height: 1.65;
+  max-width: 700px;
+  color: var(--text-2);
+}
+.service-row {
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr) 24px;
+}
+.process-list h3 {
+  margin-top: 0;
+}
+.approach-points {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 36px;
+}
+.approach-points article {
+  border-top: 2px solid var(--brand);
+  padding-top: 24px;
+}
+.approach-points h3 {
+  font-size: 24px;
+  line-height: 1.25;
+  font-weight: 500;
+  letter-spacing: -0.03em;
+  margin-bottom: 16px;
+}
+.approach-points p {
+  font-size: 18px;
+  line-height: 1.6;
+  color: var(--text-2);
+}
+.economics-copy .text-link {
+  margin-top: 28px;
+}
+.cost-chart {
+  margin: 32px 0;
+}
+.cost-row + .cost-row {
+  margin-top: 30px;
+}
+.cost-label {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+  font-size: 17px;
+}
+.cost-label strong {
+  font-size: 30px;
+  font-weight: 500;
+  letter-spacing: -0.04em;
+}
+.cost-track {
+  height: 44px;
+  background: #e0dfd7;
+}
+.cost-bar {
+  height: 100%;
+  transform-origin: left;
+}
+.cost-bar-agency {
+  width: 100%;
+  background: #7a7e75;
+}
+.cost-bar-studio {
+  width: 50%;
+  background: var(--brand);
+}
+.cost-chart figcaption {
+  margin-top: 24px;
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--text-2);
+}
+.cost-included {
+  border-top: 1px solid var(--line-strong);
+  border-bottom: 1px solid var(--line-strong);
+  padding: 24px 0;
+}
+.cost-included h3 {
+  font-size: 18px;
+  font-weight: 500;
+  margin-bottom: 16px;
+}
+.cost-included ul {
+  list-style: none;
+  display: grid;
+  gap: 12px;
+  padding: 0;
+  font-size: 16px;
+}
+.cost-included li {
+  display: flex;
+  gap: 12px;
+}
+.cost-included li:before {
+  content: "✓";
+  color: var(--brand);
+}
+.floating-contact {
+  position: fixed;
+  right: 28px;
+  bottom: 28px;
+  z-index: 60;
+  box-shadow: 0 6px 26px #1112141f;
+  animation: contact-in 0.3s ease-out;
+}
+.floating-contact[hidden] {
+  display: none;
+}
+@keyframes contact-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.brief-field input {
+  width: 100%;
+  min-width: 0;
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  padding: 16px;
+  min-height: 54px;
+  border-radius: 2px;
+  font: inherit;
+  color: var(--ink);
+}
+.brief-field textarea {
+  min-height: 180px;
+}
+.brief-extra summary {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 0;
+  font-size: 17px;
+  border-bottom: 1px solid var(--line-strong);
+  list-style: none;
+}
+.brief-extra summary::-webkit-details-marker {
+  display: none;
+}
+.brief-extra[open] summary {
+  margin-bottom: 24px;
+}
+.brief-extra[open] summary span {
+  transform: rotate(45deg);
+}
+.brief-review h3 {
+  font-size: 28px;
+  font-weight: 500;
+  margin-bottom: 24px;
+}
+.brief-selection {
+  display: flex;
+  gap: 20px;
+  align-items: baseline;
+  justify-content: space-between;
+  font-size: 16px;
+  color: var(--text-2);
+}
+.brief-summary dd {
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+@media (max-width: 900px) {
+  .approach-points {
+    gap: 24px;
+  }
+}
+@media (max-width: 700px) {
+  .vibe-definition {
+    grid-template-columns: 1fr;
+    gap: 14px;
+    margin-top: 36px;
+  }
+  .approach-points {
+    grid-template-columns: 1fr;
+    gap: 30px;
+  }
+  .service-row {
+    grid-template-columns: minmax(0, 1fr) 22px;
+  }
+  .service-row h3,
+  .service-row > div {
+    grid-column: 1;
+  }
+  .service-row > svg {
+    grid-column: 2;
+  }
+  .process-list li {
+    display: block;
+  }
+  .process-list h3 {
+    margin-bottom: 14px;
+  }
+  .cost-label {
+    font-size: 16px;
+  }
+  .cost-label strong {
+    font-size: 27px;
+  }
+  .floating-contact {
+    right: 20px;
+    bottom: max(18px, env(safe-area-inset-bottom));
+  }
+  .brief-selection {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .floating-contact {
+    animation: none;
+  }
+}
+
+.brief-fields > .full {
+  grid-column: 1 / -1;
+}
+.cost-scenarios {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 28px;
+  font-size: 16px;
+}
+.cost-scenarios > div {
+  display: flex;
+  gap: 6px;
+}
+.cost-scenarios button {
+  min-width: 46px;
+  min-height: 44px;
+  padding: 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: 2px;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+  color: var(--ink);
+  transition:
+    background 0.2s,
+    color 0.2s;
+}
+.cost-scenarios button[aria-pressed="true"] {
+  background: var(--ink);
+  color: var(--canvas);
+  border-color: var(--ink);
+}
+.cost-scenarios button:hover {
+  border-color: var(--brand);
+}
+.cost-bar-studio {
+  transition: width 0.55s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.cost-result {
+  font-size: 23px;
+  line-height: 1.3;
+  margin-top: 24px;
+  font-weight: 500;
+  letter-spacing: -0.025em;
+}
+@media (prefers-reduced-motion: reduce) {
+  .cost-bar-studio {
+    transition: none;
+  }
+}
+@media (max-width: 650px) {
+  .hero-eyebrow > span:only-child {
+    display: inline;
+    line-height: 1.5;
+  }
+}
+@media (max-width: 380px) {
+  .nav-inner {
+    gap: 12px;
+  }
+  .nav-cta {
+    white-space: nowrap;
+  }
+  .nav-cta > svg {
+    display: none;
+  }
+}
+@media (min-width: 651px) and (max-width: 900px) {
+  .ribbon-art {
+    width: 115%;
+    right: 0;
   }
 }

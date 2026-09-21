@@ -30,8 +30,8 @@ export function EstimatePanel({ scope = [], term, budget, status = 'empty', onCo
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, padding: '16px 0', borderBottom: '1px solid var(--line)' }}>
             {scope.map((s, i) => <span key={s} style={{ font: 'var(--type-body-sm)', color: 'var(--text)', padding: '6px 10px', border: '1px solid var(--line-strong)', borderRadius: 'var(--radius-sm)', animation: 'vc-in var(--dur-ui) var(--ease) both', animationDelay: `${i * 40}ms` }}>{s}</span>)}
           </div>
-          <div style={row}><span style={{ font: 'var(--type-body-sm)', color: 'var(--text-2)' }}>Оценка срока</span><span data-num style={{ font: 'var(--type-body)', color: term ? 'var(--text)' : 'var(--text-3)', fontFeatureSettings: 'var(--num-features)' }}>{term || '—'}</span></div>
-          <div style={{ ...row, borderBottom: 'none' }}><span style={{ font: 'var(--type-body-sm)', color: 'var(--text-2)' }}>Предварительный бюджет</span><span data-num style={{ font: 'var(--type-num-md)', letterSpacing: 'var(--track-num)', color: budget ? 'var(--text)' : 'var(--text-3)', fontFeatureSettings: 'var(--num-features)' }}>{budget || '—'}</span></div>
+          <div style={row}><span style={{ font: 'var(--type-body-sm)', color: 'var(--text-2)' }}>Оценка срока</span><span data-num style={{ font: 'var(--type-body)', color: term ? 'var(--text)' : 'var(--text-3)', fontFeatureSettings: 'var(--num-features)' }}>{term || '.'}</span></div>
+          <div style={{ ...row, borderBottom: 'none' }}><span style={{ font: 'var(--type-body-sm)', color: 'var(--text-2)' }}>Предварительный бюджет</span><span data-num style={{ font: 'var(--type-num-md)', letterSpacing: 'var(--track-num)', color: budget ? 'var(--text)' : 'var(--text-3)', fontFeatureSettings: 'var(--num-features)' }}>{budget || '.'}</span></div>
           {status === 'ready' && (
             <>
               <span style={{ font: 'var(--type-caption)', color: 'var(--text-3)', paddingBottom: 16 }}>Это автоматическая оценка. Перед стартом инженер проверит scope и подтвердит стоимость</span>

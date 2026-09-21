@@ -3,140 +3,96 @@ import React from "react";
 import { Container } from "../Chrome";
 import { Arrow } from "../Arrow";
 import { STUDIO_EMAIL, STUDIO_TELEGRAM } from "../constants";
-const SERVICES = [
-  "Промо-сайт",
-  "Игра или спецпроект",
-  "3D и интерактив",
-  "Production для агентства",
-  "Пока выбираем",
-];
-const STORAGE_KEY = "vc-studio-brief-v2";
-interface Draft {
-  service: string;
-  details: string;
-  deadline: string;
-  budget: string;
-}
-const EMPTY: Draft = {
-  service: SERVICES[0],
-  details: "",
-  deadline: "Срок гибкий",
-  budget: "Нужна оценка",
-};
-function isDraft(value: unknown): value is Draft {
-  if (!value || typeof value !== "object") return false;
-  const v = value as Draft;
-  return (
-    SERVICES.includes(v.service) &&
-    ["details", "deadline", "budget"].every(
-      (k) => typeof v[k as keyof Draft] === "string",
-    )
-  );
-}
+import {
+  BRIEF_STORAGE_KEY,
+  EMPTY_BRIEF,
+  readBrief,
+  serviceFromQuery,
+  type BriefDraft,
+} from "../brief";
+
 export function Intake() {
-  const [step, setStep] = React.useState(0);
-  const [draft, setDraft] = React.useState<Draft>(EMPTY);
+  const [draft, setDraft] = React.useState<BriefDraft>(EMPTY_BRIEF);
+  const [review, setReview] = React.useState(false);
   const [ready, setReady] = React.useState(false);
   const [status, setStatus] = React.useState("");
-  const heading = React.useRef<HTMLLegendElement>(null);
+  const heading = React.useRef<HTMLHeadingElement>(null);
+  const textarea = React.useRef<HTMLTextAreaElement>(null);
   React.useEffect(() => {
     try {
-      const saved = JSON.parse(sessionStorage.getItem(STORAGE_KEY) || "null");
-      if (isDraft(saved)) setDraft(saved);
+      const saved = readBrief(
+        JSON.parse(sessionStorage.getItem(BRIEF_STORAGE_KEY) || "null"),
+      );
+      if (saved) setDraft(saved);
     } catch {
-      /* Storage is optional */
+      /* Draft storage is optional. */
     }
-    const pickService = () => {
-      const index = new URLSearchParams(window.location.search).get("service");
-      if (index !== null && /^[0-3]$/.test(index)) {
-        setDraft((d) => ({ ...d, service: SERVICES[Number(index)] }));
-        setStep(0);
+    const selectService = (search: string) => {
+      const service = serviceFromQuery(search);
+      if (service) {
+        setDraft((d) => ({ ...d, service }));
+        setReview(false);
       }
     };
-    pickService();
-    window.addEventListener("popstate", pickService);
-    window.addEventListener("hashchange", pickService);
-    // Next navigation updates the query before the intake anchor receives focus.
-    const onClick = (e: MouseEvent) => {
-      const link = (e.target as Element).closest?.('a[href*="service="]');
-      if (link) {
-        const index = new URL(
-          link.getAttribute("href")!,
-          window.location.origin,
-        ).searchParams.get("service");
-        if (index !== null && /^[0-3]$/.test(index)) {
-          setDraft((d) => ({ ...d, service: SERVICES[Number(index)] }));
-          setStep(0);
-        }
-      }
+    selectService(window.location.search);
+    const navigate = () => selectService(window.location.search);
+    const clicked = (e: MouseEvent) => {
+      const link =
+        e.target instanceof Element
+          ? e.target.closest<HTMLAnchorElement>('a[href*="service="]')
+          : null;
+      if (link && link.origin === location.origin) selectService(link.search);
     };
-    document.addEventListener("click", onClick);
+    window.addEventListener("popstate", navigate);
+    window.addEventListener("hashchange", navigate);
+    document.addEventListener("click", clicked);
     setReady(true);
     return () => {
-      window.removeEventListener("popstate", pickService);
-      window.removeEventListener("hashchange", pickService);
-      document.removeEventListener("click", onClick);
+      window.removeEventListener("popstate", navigate);
+      window.removeEventListener("hashchange", navigate);
+      document.removeEventListener("click", clicked);
     };
   }, []);
   React.useEffect(() => {
     if (ready)
       try {
-        sessionStorage.setItem(STORAGE_KEY, JSON.stringify(draft));
+        sessionStorage.setItem(BRIEF_STORAGE_KEY, JSON.stringify(draft));
       } catch {}
   }, [draft, ready]);
-  const change = (key: keyof Draft, value: string) => {
+  const change = (
+    key: keyof Omit<BriefDraft, "schemaVersion">,
+    value: string,
+  ) => {
     setDraft((d) => ({ ...d, [key]: value }));
     setStatus("");
   };
-  const move = (n: number) => {
-    setStep(n);
-    setStatus("");
-    requestAnimationFrame(() => heading.current?.focus());
-  };
-  const summary = `Бриф для VC Studio\n\nФормат: ${draft.service}\nЗадача: ${draft.details || "Обсудим вместе"}\nЖелаемый срок: ${draft.deadline}\nОриентир по бюджету: ${draft.budget}\n\nСтоимость и срок подтверждаются после оценки задачи командой.`;
-  const download = () => {
-    const url = URL.createObjectURL(
-      new Blob([summary], { type: "text/plain;charset=utf-8" }),
-    );
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "vc-studio-brief.txt";
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-    setStatus("Бриф подготовлен для скачивания. Это не отправка заявки");
-  };
-  const copy = async () => {
+  const save = () => {
     try {
-      await navigator.clipboard.writeText(summary);
-      setStatus("Бриф скопирован — его можно отправить студии");
+      sessionStorage.setItem(BRIEF_STORAGE_KEY, JSON.stringify(draft));
+      setStatus("Черновик сохранен в этой вкладке. Заявка пока не отправлена.");
     } catch {
-      setStatus("Не удалось скопировать. Скачайте бриф файлом");
+      setStatus(
+        "Браузер не разрешил сохранить черновик. Оставьте страницу открытой, чтобы не потерять текст.",
+      );
     }
   };
   return (
     <section id="intake" className="editorial-section intake-section">
       <Container>
         <div className="section-kicker">
-          <span>06 / Начнем с вашей идеи</span>
+          <span>Обсудим ваш проект</span>
         </div>
         <div className="intake-shell">
           <div className="intake-aside">
             <h2>
-              Что создадим
+              Расскажите,
               <br />
-              вместе?
+              что хотите сделать
             </h2>
             <p>
-              Можно без ТЗ. Несколько деталей помогут нам понять задачу и
-              оценить объем работы
+              Опишите идею своими словами. Можно добавить ссылку на пример.
+              Готовое ТЗ не обязательно.
             </p>
-            <ol className="brief-steps">
-              {["Формат", "Детали", "Бриф"].map((s, i) => (
-                <li key={s} aria-current={step === i ? "step" : undefined}>
-                  0{i + 1} {s}
-                </li>
-              ))}
-            </ol>
             <div className="intake-contact">
               {STUDIO_TELEGRAM && (
                 <a
@@ -145,7 +101,7 @@ export function Intake() {
                   target="_blank"
                   rel="noreferrer"
                 >
-                  Сразу в Telegram <Arrow diagonal />
+                  Написать в Telegram <Arrow diagonal />
                 </a>
               )}
               {STUDIO_EMAIL && (
@@ -159,146 +115,141 @@ export function Intake() {
             className="brief-form"
             onSubmit={(e) => {
               e.preventDefault();
-              if (step < 2) move(step + 1);
+              if (!draft.details.trim()) {
+                textarea.current?.setCustomValidity(
+                  "Опишите задачу хотя бы в нескольких словах.",
+                );
+                textarea.current?.reportValidity();
+                return;
+              }
+              setReview(true);
+              requestAnimationFrame(() => heading.current?.focus());
             }}
           >
-            <fieldset>
-              <legend ref={heading} tabIndex={-1}>
-                {
-                  [
-                    "Что хотите запустить?",
-                    "Расскажите о задаче",
-                    "Ваш проект — в одном брифе",
-                  ][step]
-                }
-              </legend>
-              {step === 0 && (
-                <div className="brief-options">
-                  {SERVICES.map((s) => (
-                    <label className="brief-choice" key={s}>
-                      <input
-                        type="radio"
-                        name="service"
-                        value={s}
-                        checked={draft.service === s}
-                        onChange={() => change("service", s)}
-                      />
-                      <span>{s}</span>
-                    </label>
-                  ))}
-                </div>
-              )}
-              {step === 1 && (
-                <div className="brief-fields">
-                  <label className="brief-field full">
-                    Что должно получиться?
-                    <textarea
-                      value={draft.details}
-                      onChange={(e) => change("details", e.target.value)}
-                      maxLength={3000}
-                      placeholder="Для кого проект, какую задачу решает, что уже готово"
-                    />
-                  </label>
-                  <label className="brief-field">
-                    Желаемый срок
-                    <select
-                      value={draft.deadline}
-                      onChange={(e) => change("deadline", e.target.value)}
-                    >
-                      <option>Срок гибкий</option>
-                      <option>До 2 недель</option>
-                      <option>В течение месяца</option>
-                      <option>Есть конкретная дата</option>
-                    </select>
-                  </label>
-                  <label className="brief-field">
-                    Ориентир по бюджету
-                    <select
-                      value={draft.budget}
-                      onChange={(e) => change("budget", e.target.value)}
-                    >
-                      <option>Нужна оценка</option>
-                      <option>100–200 тыс. ₽</option>
-                      <option>200–500 тыс. ₽</option>
-                      <option>От 500 тыс. ₽</option>
-                    </select>
-                  </label>
-                </div>
-              )}
-              {step === 2 && (
+            {review ? (
+              <div className="brief-review">
+                <h3 ref={heading} tabIndex={-1}>
+                  Ваш проект
+                </h3>
                 <dl className="brief-summary">
                   {[
-                    ["Формат", draft.service],
-                    ["Задача", draft.details || "Обсудим вместе"],
+                    ["Задача", draft.details],
+                    ["Направление", draft.service],
                     ["Срок", draft.deadline],
                     ["Бюджет", draft.budget],
-                  ].map(([k, v]) => (
-                    <div key={k}>
-                      <dt>{k}</dt>
-                      <dd>{v}</dd>
-                    </div>
-                  ))}
+                    ["Контакт", draft.contact],
+                  ]
+                    .filter(([, v]) => v && v !== "Пока не определен")
+                    .map(([k, v]) => (
+                      <div key={k}>
+                        <dt>{k}</dt>
+                        <dd>{v}</dd>
+                      </div>
+                    ))}
                 </dl>
-              )}
-            </fieldset>
+              </div>
+            ) : (
+              <div className="brief-fields">
+                <label className="brief-field full">
+                  Что должно получиться?
+                  <textarea
+                    ref={textarea}
+                    name="details"
+                    required
+                    maxLength={4000}
+                    value={draft.details}
+                    onChange={(e) => {
+                      e.target.setCustomValidity("");
+                      change("details", e.target.value);
+                    }}
+                    placeholder="Например: нужен сайт нового бренда с каталогом. Дизайн пока обсуждаем, запуск планируем к осени."
+                  />
+                </label>
+                {draft.service !== "Пока не определен" && (
+                  <div className="brief-selection full">
+                    <span>{draft.service}</span>
+                    <button
+                      type="button"
+                      className="brief-back"
+                      onClick={() => change("service", "Пока не определен")}
+                      aria-label="Убрать выбранное направление"
+                    >
+                      Убрать
+                    </button>
+                  </div>
+                )}
+                <details className="brief-extra full">
+                  <summary>
+                    Добавить сроки, бюджет и контакт{" "}
+                    <span aria-hidden="true">+</span>
+                  </summary>
+                  <div className="brief-fields">
+                    <label className="brief-field">
+                      Желаемый срок
+                      <input
+                        name="deadline"
+                        maxLength={200}
+                        value={draft.deadline}
+                        onChange={(e) => change("deadline", e.target.value)}
+                        placeholder="Если уже известен"
+                      />
+                    </label>
+                    <label className="brief-field">
+                      Бюджет, если определен
+                      <input
+                        name="budget"
+                        maxLength={200}
+                        value={draft.budget}
+                        onChange={(e) => change("budget", e.target.value)}
+                        placeholder="Любой ориентир"
+                      />
+                    </label>
+                    <label className="brief-field full">
+                      Telegram или email
+                      <input
+                        name="contact"
+                        autoComplete="off"
+                        maxLength={200}
+                        value={draft.contact}
+                        onChange={(e) => change("contact", e.target.value)}
+                        placeholder="Как с вами связаться"
+                      />
+                    </label>
+                  </div>
+                </details>
+              </div>
+            )}
             <div className="brief-footer">
-              {step > 0 && (
-                <button
-                  className="brief-back"
-                  type="button"
-                  onClick={() => move(step - 1)}
-                >
-                  Назад
-                </button>
-              )}
-              {step < 2 ? (
-                <button type="submit" className="action action-primary">
-                  {step === 0 ? "Дальше" : "Собрать бриф"}
-                  <Arrow />
-                </button>
-              ) : (
+              {review ? (
                 <>
-                  {STUDIO_EMAIL && (
-                    <a
-                      className="action action-primary"
-                      href={`mailto:${STUDIO_EMAIL}?subject=${encodeURIComponent("Проект для VC Studio")}&body=${encodeURIComponent(summary)}`}
-                    >
-                      Открыть письмо
-                      <Arrow diagonal />
-                    </a>
-                  )}
-                  {STUDIO_TELEGRAM && (
-                    <a
-                      className="action action-primary"
-                      href={`https://t.me/${STUDIO_TELEGRAM.replace("@", "")}?text=${encodeURIComponent(summary)}`}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      Передать бриф в Telegram
-                      <Arrow diagonal />
-                    </a>
-                  )}
                   <button
                     type="button"
-                    className={
-                      STUDIO_EMAIL || STUDIO_TELEGRAM
-                        ? "brief-back"
-                        : "action action-primary"
-                    }
-                    onClick={download}
+                    className="brief-back"
+                    onClick={() => {
+                      setReview(false);
+                      setStatus("");
+                      requestAnimationFrame(() => textarea.current?.focus());
+                    }}
                   >
-                    Скачать бриф
+                    Редактировать
                   </button>
-                  <button type="button" className="brief-back" onClick={copy}>
-                    Скопировать
+                  <button
+                    type="button"
+                    className="action action-primary"
+                    onClick={save}
+                  >
+                    Сохранить черновик <Arrow />
                   </button>
                 </>
+              ) : (
+                <button type="submit" className="action action-primary">
+                  Подготовить бриф <Arrow />
+                </button>
               )}
             </div>
             <p className="brief-note">
-              {step === 2
-                ? "Стоимость и срок подтвердим после разбора задачи. Бриф не отправляется автоматически"
-                : "Ответы сохраняются в этой вкладке. Можно вернуться и изменить их"}
+              Отправка заявок пока недоступна. Можно подготовить черновик, он
+              останется в этой вкладке.
             </p>
             <p className="brief-status" role="status">
               {status}

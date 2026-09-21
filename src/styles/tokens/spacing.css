@@ -19,7 +19,7 @@
 --container-pad-mobile:20px;
 --section-gap:var(--space-10);
 --section-gap-mobile:var(--space-9);
-/* radii — small; 12 only for large interactive canvases */
+/* radii - small; 12 only for large interactive canvases */
 --radius-sm:2px;
 --radius-md:3px;
 --radius-lg:4px;

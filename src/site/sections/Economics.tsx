@@ -1,3 +1,4 @@
+import { CostChart } from "../CostChart";
 import Link from "next/link";
 import { Container } from "../Chrome";
 import { Arrow } from "../Arrow";
@@ -8,52 +9,43 @@ export function Economics() {
         <div className="economics-layout">
           <div className="economics-copy">
             <div className="section-kicker">
-              <span>03 / Открытая экономика</span>
+              <span>Экономика проекта</span>
             </div>
             <h2>
-              Бюджет —<br />в результат
+              Разработка дешевле.
+              <br />
+              За счет AI.
             </h2>
             <p className="section-lead">
-              AI сокращает ручную работу. Вы платите за решение задачи,
-              инженерную работу и реальный расход инструментов
+              Сокращаем ручную разработку с помощью AI. Вы платите за решение
+              задачи с меньшими затратами на написание кода. Дизайн,
+              функциональность и проверка остаются в проекте.
             </p>
-            <div className="starting-price">
-              <span>Старт проектов</span>
-              <strong>от 100 000 ₽</strong>
-            </div>
             <Link href="/#intake" className="text-link">
-              Получить оценку задачи <Arrow diagonal />
+              Обсудить стоимость <Arrow diagonal />
             </Link>
           </div>
-          <div className="price-ledger">
+          <div className="price-ledger cost-comparison">
             <div className="ledger-heading">
-              <span>Как складывается стоимость</span>
+              <span>Одна задача. Другой бюджет.</span>
               <span aria-hidden="true">↘</span>
             </div>
-            <div className="price-line">
-              <span className="price-index">01</span>
-              <h3>Работа команды</h3>
-              <strong>Фиксируем до старта</strong>
-              <p>
-                Дизайн, архитектура, разработка, интеграции, тестирование и
-                запуск. Состав работ согласуем заранее
-              </p>
-            </div>
-            <div className="price-line">
-              <span className="price-index">02</span>
-              <h3>AI-инфраструктура</h3>
-              <strong>По фактическому расходу</strong>
-              <p>
-                Показываем затраты на модели и инструменты отдельно. Без наценки
-                и условной цены за токен
-              </p>
+            <CostChart />
+            <div className="cost-included">
+              <h3>В проект входят</h3>
+              <ul>
+                <li>Дизайн под вашу задачу</li>
+                <li>Согласованный функционал</li>
+                <li>Тестирование и запуск</li>
+                <li>Исходный код</li>
+              </ul>
             </div>
             <div className="ledger-footer">
               <span className="trace-mark" />
               <p>
-                Сначала согласованный объем работ.
+                Стоимость работ согласуем до старта.
                 <br />
-                После запуска — понятный отчет.
+                Расходы на AI показываем отдельно.
               </p>
             </div>
           </div>

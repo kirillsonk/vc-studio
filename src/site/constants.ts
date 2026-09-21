@@ -1,8 +1,8 @@
 export const HOME_SECTIONS: Array<[id: string, label: string]> = [
-  ["cases", "В деле"],
   ["what", "Что делаем"],
+  ["approach", "Подход"],
   ["economics", "Стоимость"],
-  ["process", "Подход"],
+  ["cases", "Демо"],
 ];
 export const ROUTES = {
   home: "/",

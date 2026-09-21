@@ -9,25 +9,23 @@ export function Cases() {
     <section id="cases" className="editorial-section showcase-section">
       <Container>
         <div className="section-kicker">
-          <span>01 / В деле</span>
-          <span>Собственный эксперимент студии</span>
+          <span>Интерактивное демо</span>
         </div>
         <div className="section-heading">
           <h2>
-            Хороший digital
-            <br />
-            чувствуется в деле
+            Из посетителя
+            <br />в участника
           </h2>
           <p>
-            Поэтому здесь можно поиграть. Собрали короткую браузерную механику —
-            такую можно встроить в кампанию, запуск продукта или спецпроект
+            Попробуйте короткую браузерную игру. Такие механики помогают
+            вовлекать аудиторию в запуск продукта, акцию или спецпроект.
           </p>
         </div>
         <Playground />
         <div className="project-caption">
           <div>
             <h3>Deploy Run</h3>
-            <p>Браузерная игра · Демо-проект · 2026</p>
+            <p>Браузерная игра · Эксперимент студии</p>
           </div>
           <Link href="/case" className="text-link">
             Как это устроено <Arrow diagonal />

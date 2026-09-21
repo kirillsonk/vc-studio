@@ -11,7 +11,7 @@
 --track-h2:-0.03em;
 --track-h3:-0.02em;
 --track-h4:-0.01em;
-/* numbers — same family, tabular */
+/* numbers - same family, tabular */
 --type-num-xl:500 clamp(56px,6vw,96px)/1 var(--font-sans);
 --type-num-lg:500 48px/1 var(--font-sans);
 --type-num-md:500 30px/1 var(--font-sans);

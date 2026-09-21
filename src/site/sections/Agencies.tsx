@@ -12,17 +12,17 @@ export function Agencies() {
           <div className="agency-copy">
             <span className="eyebrow">Агентствам и креативным командам</span>
             <h2>
-              Ваша идея.
+              Разработка
               <br />
-              Наш production
+              для вашего агентства
             </h2>
             <p>
-              Подключаемся на этапе концепции или готового дизайна. Берем
-              разработку, интерактив, интеграции и запуск на себя — вы
-              сохраняете фокус на клиенте и креативе
+              Реализуем готовый дизайн, подключим интеграции и подготовим проект
+              к запуску. Можно передать всю разработку или отдельную часть
+              задачи.
             </p>
-            <Link href="/?service=3#intake" className="text-link">
-              Передать проект в production <Arrow diagonal />
+            <Link href="/#intake" className="text-link">
+              Обсудить разработку <Arrow diagonal />
             </Link>
           </div>
         </div>

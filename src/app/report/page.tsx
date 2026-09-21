@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { ReportPage } from '@/site/pages/ReportPage';
 
 export const metadata: Metadata = {
-  title: 'Из чего сложилась стоимость — VC Studio',
+  title: 'Из чего сложилась стоимость | VC Studio',
   description: 'Production-отчет по проекту: AI-расход, работа команды и итоговый бюджет',
 };
 

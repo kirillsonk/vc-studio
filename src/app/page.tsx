@@ -1,22 +1,28 @@
 import { Hero } from "@/site/sections/Hero";
 import { Cases } from "@/site/sections/Cases";
 import { WhatWeDo } from "@/site/sections/WhatWeDo";
+import { Approach } from "@/site/sections/Approach";
 import { Economics } from "@/site/sections/Economics";
 import { Process } from "@/site/sections/Process";
 import { Agencies } from "@/site/sections/Agencies";
 import { FAQ } from "@/site/sections/FAQ";
 import { Intake } from "@/site/sections/Intake";
+import { ScrollReveal } from "@/site/ScrollReveal";
+import { FloatingContact } from "@/site/FloatingContact";
 export default function HomePage() {
   return (
     <main id="main">
+      <ScrollReveal />
       <Hero />
-      <Cases />
       <WhatWeDo />
+      <Approach />
       <Economics />
+      <Cases />
       <Process />
       <Agencies />
       <FAQ />
       <Intake />
+      <FloatingContact />
     </main>
   );
 }

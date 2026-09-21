@@ -45,10 +45,10 @@ function FormsGroup() {
         <Field label="Недоступно"><TextInput disabled defaultValue="Только после подтверждения scope" /></Field>
         <Field label="Задача" style={{ gridColumn: '1 / -1' }}><Textarea rows={2} placeholder="Опишите проект своими словами. Можно без ТЗ" /></Field>
       </div>
-      <Row label="OptionBlock — одиночный выбор" style={{ display: 'grid', gridTemplateColumns: 'repeat(4,minmax(0,1fr))', gap: 8 }}>
+      <Row label="OptionBlock - одиночный выбор" style={{ display: 'grid', gridTemplateColumns: 'repeat(4,minmax(0,1fr))', gap: 8 }}>
         {['Промо-сайт', 'Веб-игра', '3D / WebGL', 'Другое'].map(o => <OptionBlock key={o} selected={choice === o} onClick={() => setChoice(o)}>{o}</OptionBlock>)}
       </Row>
-      <Row label="Chip — вторичный множественный выбор · Checkbox">
+      <Row label="Chip - вторичный множественный выбор · Checkbox">
         {['WebGL', 'Игра', 'Анимация', 'Интеграции'].map(o => <Chip key={o} selected={filters.includes(o)} onClick={() => toggle(o)}>{o}</Chip>)}
         <span style={{ width: 16 }} />
         <Checkbox defaultChecked label="Нужна поддержка после запуска" />
@@ -101,13 +101,13 @@ function IntakeGroup() {
         <BriefMessage role="user">Промо-сайт с игровой механикой для кампании</BriefMessage>
         <BriefMessage index={2}>Когда проект должен быть в проде?</BriefMessage>
         <div className="grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, paddingLeft: 56 }}>
-          {['До 7 дней', '1–2 недели', '3–4 недели', 'Срок гибкий'].map(o => <OptionBlock key={o} selected={a === o} onClick={() => setA(o)}>{o}</OptionBlock>)}
+          {['До 7 дней', '1-2 недели', '3-4 недели', 'Срок гибкий'].map(o => <OptionBlock key={o} selected={a === o} onClick={() => setA(o)}>{o}</OptionBlock>)}
         </div>
         <BriefComposer style={{ marginLeft: 56 }} />
       </div>
       <EstimatePanel
         scope={a ? ['Промо-сайт', 'Мини-игра', 'Адаптив'] : ['Промо-сайт', 'Мини-игра']}
-        term={a ? '8–12 рабочих дней' : undefined}
+        term={a ? '8-12 рабочих дней' : undefined}
         status="building"
       />
     </div>
@@ -136,10 +136,10 @@ export function KitPage() {
             <span data-num style={{ font: 'var(--type-index)', color: 'var(--text-3)', letterSpacing: '.04em' }}>DESIGN SYSTEM · 19 КОМПОНЕНТОВ</span>
             <h1 style={{ margin: 0, font: 'var(--type-h1)', letterSpacing: 'var(--track-h1)' }}>Библиотека компонентов</h1>
           </div>
-          <p className="pretty" style={{ margin: 0, font: 'var(--type-body-lg)', color: 'var(--text-2)' }}>Шесть групп примитивов, из которых собраны все экраны сайта. Правила использования — в BRAND.md</p>
+          <p className="pretty" style={{ margin: 0, font: 'var(--type-body-lg)', color: 'var(--text-2)' }}>Шесть групп примитивов, из которых собраны все экраны сайта. Правила использования - в BRAND.md</p>
         </div>
 
-        <Group index="01" title="Кнопки" subtitle="Primary — заливка вермильоном. Secondary — 1 px граница. Tertiary — текст с базовой линией, которая рисуется на hover">
+        <Group index="01" title="Кнопки" subtitle="Primary - заливка вермильоном. Secondary - 1 px граница. Tertiary - текст с базовой линией, которая рисуется на hover">
           <Row label="primary · secondary · tertiary">
             <Button>Запустить проект</Button>
             <Button variant="secondary">Смотреть кейсы</Button>
@@ -157,15 +157,15 @@ export function KitPage() {
           </Row>
         </Group>
 
-        <Group index="02" title="Формы" subtitle="Поля 56 px, белые, 1 px линия. Фокус — вермильоновая граница и мягкое кольцо. Выбор — прямоугольные блоки, не таблетки">
+        <Group index="02" title="Формы" subtitle="Поля 56 px, белые, 1 px линия. Фокус - вермильоновая граница и мягкое кольцо. Выбор - прямоугольные блоки, не таблетки">
           <FormsGroup />
         </Group>
 
-        <Group index="03" title="Числа" subtitle="Табличные цифры во всех состояниях. Ledger — язык сметы, а не SaaS-тарифов. Compare — две полосы вместо перечеркнутых цен">
+        <Group index="03" title="Числа" subtitle="Табличные цифры во всех состояниях. Ledger - язык сметы, а не SaaS-тарифов. Compare - две полосы вместо перечеркнутых цен">
           <NumbersGroup />
         </Group>
 
-        <Group index="04" title="Контент" subtitle="Визуал кейса сам является карточкой, текст лежит на canvas. Trace — фирменный мотив прохождения проекта через production">
+        <Group index="04" title="Контент" subtitle="Визуал кейса сам является карточкой, текст лежит на canvas. Trace - фирменный мотив прохождения проекта через production">
           <div className="grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--grid-gutter)' }}>
             <CaseCard kind="Веб-игра" year="2026" client="Сеть кофеен" title="Промо-игра с лидербордом и промокодами" days={9} budget={184000} media={<Media c="var(--vermilion)" t="Coffee Run" />} />
             <CaseCard kind="3D / WebGL" year="2026" client="Застройщик" title="Квартал в браузере" days={14} budget={412000} media={<Media c="var(--ink)" t="Quarter" />} />
@@ -183,7 +183,7 @@ export function KitPage() {
           </div>
         </Group>
 
-        <Group index="06" title="Заявка" subtitle="Не чат-бот: у AI обычный абзац с индексом, у пользователя — текст с левой линейкой. Справа оценка достраивается по мере ответов">
+        <Group index="06" title="Заявка" subtitle="Не чат-бот: у AI обычный абзац с индексом, у пользователя - текст с левой линейкой. Справа оценка достраивается по мере ответов">
           <IntakeGroup />
         </Group>
       </Container>

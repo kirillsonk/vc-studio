@@ -58,7 +58,7 @@ export function CasePage() {
           <h2>Что внутри</h2>
           <div>
             <p>
-              Canvas отвечает за игровое поле, React — за интерфейс и состояния.
+              Canvas отвечает за игровое поле, React управляет интерфейсом и состояниями.
               Управление работает мышью, касанием и клавиатурой. Игра не
               перехватывает клавиши за пределами своего поля
             </p>
@@ -72,7 +72,7 @@ export function CasePage() {
             </Link>
           </div>
         </div>
-        <Link href="/?service=1#intake" className="action action-primary">
+        <Link href="/?service=2#intake" className="action action-primary">
           Запустить похожий проект <Arrow diagonal />
         </Link>
       </Container>

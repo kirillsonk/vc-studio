@@ -12,7 +12,7 @@ export interface TraceProps {
   style?: React.CSSProperties;
 }
 
-/** Production Trace — the brand motif. A thin vermilion line through named nodes; `active` index is the current stage, earlier ones are done, the last is production (green when reached). Draws on mount. */
+/** Production Trace - the brand motif. A thin vermilion line through named nodes; `active` index is the current stage, earlier ones are done, the last is production (green when reached). Draws on mount. */
 export function Trace({ steps = ['Brief', 'Scope', 'Build', 'QA', 'Production'], active = 2, labels = true, vertical = false, style }: TraceProps) {
   const [on, setOn] = React.useState(false);
   React.useEffect(() => { const t = setTimeout(() => setOn(true), 60); return () => clearTimeout(t); }, []);

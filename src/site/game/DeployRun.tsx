@@ -3,7 +3,7 @@
 import React from 'react';
 
 /**
- * Deploy Run — the studio's own demonstration project, not a client case.
+ * Deploy Run - the studio's own demonstration project, not a client case.
  *
  * Thirty seconds, one rule: hit the deploy window while it is under the marker.
  * Every hit narrows the window and speeds the marker up, so the run gets harder
@@ -180,7 +180,7 @@ export function DeployRun() {
       }
       ctx.globalAlpha = 1;
 
-      // Every shipped deploy adds a node to the trace below — the run's own timeline
+      // Every shipped deploy adds a node to the trace below - the run's own timeline
       ctx.strokeStyle = palette.line;
       ctx.lineWidth = 1.5;
       ctx.beginPath();

@@ -33,7 +33,7 @@ export function ReportPage() {
         </div>
       </Container>
       <Container style={{ paddingTop: 64 }}>
-        <p className="demo-disclaimer">Это пример структуры отчета. Все суммы, сроки и токены демонстрационные — они не описывают фактические затраты на Deploy Run</p>
+        <p className="demo-disclaimer">Это пример структуры отчета. Все суммы, сроки и токены демонстрационные - они не описывают фактические затраты на Deploy Run</p>
         <div className="grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(0,5fr) minmax(0,7fr)', gap: 'var(--grid-gutter)', alignItems: 'start', paddingTop: 32, borderTop: '1px solid var(--text)' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 40 }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -48,8 +48,8 @@ export function ReportPage() {
           </div>
           <Ledger
             rows={[
-              { label: 'AI-инфраструктура', sub: 'Claude · GPT · агентские сессии — по фактическому расходу', value: ai },
-              { label: 'Production-команда', sub: 'архитектура, управление AI, review, QA, интеграции, деплой — зафиксировано до старта', value: team },
+              { label: 'AI-инфраструктура', sub: 'Claude · GPT · агентские сессии - по фактическому расходу', value: ai },
+              { label: 'Production-команда', sub: 'архитектура, управление AI, review, QA, интеграции, деплой - зафиксировано до старта', value: team },
               { label: 'Поддержка 3 месяца', sub: 'пример условий поддержки', value: 'включено', tone: 'positive' },
             ]}
             total={ai + team}

@@ -10,7 +10,7 @@ export interface DemoBlockProps {
   cta?: string;
   autoload?: boolean;
   loadingText?: string;
-  /** dark contrast surface — at most one per page */
+  /** dark contrast surface - at most one per page */
   dark?: boolean;
   children?: React.ReactNode;
   onStart?: () => void;

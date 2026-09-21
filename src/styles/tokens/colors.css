@@ -12,7 +12,7 @@
 --vermilion-hover:#BF3A13;
 --vermilion-press:#A3300E;
 --vermilion-soft:#FBEAE3;
---blue:#3157FF;          /* secondary accent — data viz, rare highlights; never the primary */
+--blue:#3157FF;          /* secondary accent - data viz, rare highlights; never the primary */
 --blue-soft:#E8ECFF;
 --green:#087F5B;
 --green-soft:#E4F7EF;
@@ -36,7 +36,7 @@
 --brand-soft:var(--vermilion-soft);
 --accent-2:var(--blue);
 --accent-2-soft:var(--blue-soft);
---positive:var(--green);           /* live, ready, saved, success — semantic only */
+--positive:var(--green);           /* live, ready, saved, success - semantic only */
 --positive-soft:var(--green-soft);
 --warning:var(--amber);
 --warning-soft:var(--amber-soft);

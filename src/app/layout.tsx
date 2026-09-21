@@ -13,7 +13,7 @@ const onest = Onest({
 });
 
 export const metadata: Metadata = {
-  title: 'VC Studio — AI-native production',
+  title: 'VC Studio | Сайты, сервисы и разработка с AI',
   description: 'Спецпроекты на скорости AI. С ответственностью студии. Промо-сайты, веб-игры, 3D и интерактивные продукты',
 };
 

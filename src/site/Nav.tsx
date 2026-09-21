@@ -24,7 +24,7 @@ export function Nav() {
         <Link
           href="/"
           className="wordmark"
-          aria-label="VC Studio — главная"
+          aria-label="VC Studio, главная"
           onClick={() => setOpen(false)}
         >
           vc<span className="wordmark-slash">/</span>studio
@@ -41,7 +41,7 @@ export function Nav() {
           href="/#intake"
           onClick={() => setOpen(false)}
         >
-          Начать проект <Arrow diagonal />
+          Обсудить проект <Arrow diagonal />
         </Link>
         <button
           className="menu-toggle"

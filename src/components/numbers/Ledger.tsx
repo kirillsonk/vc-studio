@@ -17,7 +17,7 @@ export interface LedgerProps {
   style?: React.CSSProperties;
 }
 
-/** Estimate / invoice rows: label left, value right, 1px dividers, total row emphasised. The brand's pricing surface — never SaaS tiers. */
+/** Estimate / invoice rows: label left, value right, 1px dividers, total row emphasised. The brand's pricing surface - never SaaS tiers. */
 export function Ledger({ title, rows = [], total, totalLabel = 'Итого', note, dense, style }: LedgerProps) {
   const cell: React.CSSProperties = { padding: dense ? '12px 0' : '18px 0', borderBottom: '1px solid var(--line)', display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 24 };
   const val = (v: number | string, tone?: LedgerRow['tone']) => (

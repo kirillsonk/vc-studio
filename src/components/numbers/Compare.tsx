@@ -13,11 +13,11 @@ export interface CompareProps {
   style?: React.CSSProperties;
 }
 
-/** Two production models as horizontal bars — ours in brand vermilion, market reference in graphite. Quiet; no strike-through, no badges. */
+/** Two production models as horizontal bars - ours in brand vermilion, market reference in graphite. Quiet; no strike-through, no badges. */
 export function Compare({ ours, theirs, ourLabel = 'AI-native production', theirLabel = 'Классическая production-модель', unit = ' ₽', savingLabel = 'разница', note, style }: CompareProps) {
   const [on, setOn] = React.useState(false);
   React.useEffect(() => { const t = setTimeout(() => setOn(true), 60); return () => clearTimeout(t); }, []);
-  const fmt = (v: number | [number, number]) => Array.isArray(v) ? v[0].toLocaleString('ru-RU') + '–' + v[1].toLocaleString('ru-RU') + unit : v.toLocaleString('ru-RU') + unit;
+  const fmt = (v: number | [number, number]) => Array.isArray(v) ? v[0].toLocaleString('ru-RU') + '-' + v[1].toLocaleString('ru-RU') + unit : v.toLocaleString('ru-RU') + unit;
   const max = Array.isArray(theirs) ? theirs[1] : theirs;
   const oursN = Array.isArray(ours) ? ours[1] : ours;
   const theirsN = Array.isArray(theirs) ? theirs[0] : theirs;

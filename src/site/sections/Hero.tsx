@@ -58,10 +58,6 @@ export function ProductionCanvas() {
           />
         </g>
       </svg>
-      <div className="art-caption">
-        <span className="trace-mark" /> Идея приобретает форму{" "}
-        <span>01 / Studio study</span>
-      </div>
     </div>
   );
 }
@@ -71,8 +67,7 @@ export function Hero() {
     <section className="hero" aria-labelledby="hero-title">
       <Container>
         <div className="hero-eyebrow">
-          <span>Независимая digital-студия</span>
-          <span>Дизайн. Разработка. AI.</span>
+          <span>Сайты, веб-сервисы и интерактивные проекты</span>
         </div>
         <div className="hero-grid">
           <div className="hero-copy">
@@ -82,24 +77,25 @@ export function Hero() {
               <span>На скорости AI.</span>
             </h1>
             <p className="hero-lead">
-              Сайты, игры и спецпроекты, которые хочется открывать. Вайбкодим с
-              вниманием к дизайну и ответственностью за каждый запуск
+              Проектируем дизайн и разрабатываем с AI. Вайбкодинг сокращает
+              затраты на написание кода. За сценарии, технические решения и
+              проверку отвечает наша команда.
             </p>
             <div className="hero-actions">
               <Link className="action action-primary" href="/#intake">
-                Начать проект <Arrow diagonal />
+                Обсудить проект <Arrow diagonal />
               </Link>
               <Link className="text-link" href="/#cases">
-                Смотреть в деле <Arrow />
+                Открыть демо <Arrow />
               </Link>
             </div>
           </div>
           <ProductionCanvas />
         </div>
         <div className="hero-baseline">
-          <span>AI ускоряет код. Мы отвечаем за продукт.</span>
+          <span>От небольшой задачи до полноценного продукта</span>
           <a href="#economics">
-            Проекты от 100 000 ₽ <Arrow diagonal />
+            За счет чего экономим <Arrow diagonal />
           </a>
         </div>
       </Container>
