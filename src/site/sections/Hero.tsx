@@ -1,89 +1,108 @@
-'use client';
+import Link from "next/link";
+import { Container } from "../Chrome";
+import { Arrow } from "../Arrow";
 
-import React from 'react';
-import { Button, Counter } from '@/components';
-import { Container } from '../Chrome';
-import { ROUTES } from '../constants';
-import { useGo } from '../navigation';
-
-type RowState = 'ready' | 'building' | 'queued';
-
-const ROWS: Array<[name: string, state: RowState]> = [
-  ['Hero section', 'ready'],
-  ['Interactive canvas', 'ready'],
-  ['API integration', 'building'],
-  ['QA', 'queued'],
-];
-
-/** Production canvas: a light build interface that assembles itself in ~1.6s, then stays calm. */
+/** A lightweight studio motion study. No simulated telemetry or WebGL dependency. */
 export function ProductionCanvas() {
-  const [step, setStep] = React.useState(0);
-  const [tokens, setTokens] = React.useState(0);
-  React.useEffect(() => {
-    const t = [200, 500, 800, 1100, 1400].map((ms, i) => setTimeout(() => setStep(i + 1), ms));
-    const t0 = setTimeout(() => setTokens(1284310), 900);
-    const live = setInterval(() => setTokens(v => v ? v + Math.round(Math.random() * 600) : v), 2400);
-    return () => { t.forEach(clearTimeout); clearTimeout(t0); clearInterval(live); };
-  }, []);
-  const cost = Math.round(tokens * 0.00299);
-  const status = (s: RowState) => s === 'ready' ? { c: 'var(--positive)', t: 'ready' } : s === 'building' ? { c: 'var(--brand)', t: 'building' } : { c: 'var(--text-3)', t: 'queued' };
   return (
-    <div style={{ background: 'var(--surface)', border: '1px solid var(--line)', borderRadius: 'var(--radius-lg)', padding: 28, display: 'flex', flexDirection: 'column', gap: 0, position: 'relative', overflow: 'hidden', opacity: step > 0 ? 1 : 0, transition: 'opacity var(--dur-ui) var(--ease)' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', paddingBottom: 16, borderBottom: '1px solid var(--text)' }}>
-        <span data-num style={{ font: 'var(--type-index)', color: 'var(--text-3)', letterSpacing: '.04em' }}>BUILD 0042</span>
-        <span style={{ display: 'flex', alignItems: 'center', gap: 8, font: 'var(--type-caption)', color: 'var(--positive)' }}><span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--positive)' }} />Live</span>
+    <div className="production-art" aria-hidden="true">
+      <svg viewBox="0 0 540 560" fill="none" className="ribbon-art">
+        <defs>
+          <linearGradient
+            id="ribbon-metal"
+            x1="90"
+            y1="50"
+            x2="440"
+            y2="490"
+            gradientUnits="userSpaceOnUse"
+          >
+            <stop stopColor="#292a27" />
+            <stop offset=".23" stopColor="#7a7b75" />
+            <stop offset=".39" stopColor="#f7f7ef" />
+            <stop offset=".51" stopColor="#97988e" />
+            <stop offset=".72" stopColor="#33362f" />
+            <stop offset="1" stopColor="#b9b9ad" />
+          </linearGradient>
+          <linearGradient
+            id="ribbon-edge"
+            x1="130"
+            y1="40"
+            x2="390"
+            y2="480"
+            gradientUnits="userSpaceOnUse"
+          >
+            <stop stopColor="#f59b69" />
+            <stop offset=".45" stopColor="#d9451a" />
+            <stop offset="1" stopColor="#982706" />
+          </linearGradient>
+          <linearGradient id="ribbon-light">
+            <stop stopColor="white" stopOpacity="0" />
+            <stop offset=".5" stopColor="white" stopOpacity=".8" />
+            <stop offset="1" stopColor="white" stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        <g className="ribbon-body">
+          {Array.from({ length: 29 }, (_, i) => (
+            <path
+              key={i}
+              d={`M ${123 + i * 3.8} ${88 + i * 2.3} C ${395 + i * 1.1} ${20 + i * 2.4}, ${445 + i * 0.5} ${216 + i * 3}, ${247 + i * 3} ${252 + i * 2.5} C ${48 + i * 3.4} ${289 + i * 3}, ${107 + i * 3.7} ${464 + i * 2}, ${357 + i * 3.3} ${437 + i * 2.3}`}
+              stroke={i > 25 ? "url(#ribbon-edge)" : "url(#ribbon-metal)"}
+              strokeWidth="2.6"
+            />
+          ))}
+          <path
+            className="ribbon-glint"
+            d="M140 105C440 40 447 243 274 278C83 317 159 496 393 462"
+            stroke="url(#ribbon-light)"
+            strokeWidth="2"
+          />
+        </g>
+      </svg>
+      <div className="art-caption">
+        <span className="trace-mark" /> Идея приобретает форму{" "}
+        <span>01 / Studio study</span>
       </div>
-      <div style={{ position: 'relative' }}>
-        <div aria-hidden style={{ position: 'absolute', left: 4, top: 0, bottom: 0, width: 1.5, background: 'var(--line)' }} />
-        <div aria-hidden style={{ position: 'absolute', left: 4, top: 0, width: 1.5, background: 'var(--brand)', height: `${Math.min(step, 4) / 4 * 100}%`, transition: 'height var(--dur-reveal) var(--ease)' }} />
-        {ROWS.map(([n, s], i) => {
-          const on = step > i, st = status(s);
-          return (
-            <div key={n} style={{ display: 'grid', gridTemplateColumns: '24px 1fr auto', gap: 12, alignItems: 'center', padding: '14px 0', borderBottom: '1px solid var(--line)', opacity: on ? 1 : 0, transform: on ? 'none' : 'translateY(6px)', transition: 'all var(--dur-ui) var(--ease)' }}>
-              <span style={{ width: 9, height: 9, borderRadius: '50%', background: s === 'queued' ? 'var(--surface)' : st.c, border: `1.5px solid ${st.c}`, boxSizing: 'border-box', marginLeft: .5 }} />
-              <span style={{ font: 'var(--type-body-sm)', color: 'var(--text)' }}>{n}</span>
-              <span style={{ font: 'var(--type-caption)', color: st.c }}>{st.t}</span>
-            </div>
-          );
-        })}
-      </div>
-      <div style={{ paddingTop: 24, opacity: step > 3 ? 1 : 0, transition: 'opacity var(--dur-reveal) var(--ease)' }}>
-        <span style={{ font: 'var(--type-label-sm)', color: 'var(--text)' }}>Эта страница собрана с AI</span>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, paddingTop: 14 }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}><Counter value={tokens} size="md" style={{ fontSize: 'clamp(22px,2vw,30px)' }} /><span style={{ font: 'var(--type-caption)', color: 'var(--text-3)' }}>токенов ушло на сборку</span></div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}><Counter value={cost} size="md" suffix=" ₽" style={{ fontSize: 'clamp(22px,2vw,30px)' }} /><span style={{ font: 'var(--type-caption)', color: 'var(--text-3)' }}>столько стоили модели</span></div>
-        </div>
-      </div>
-      <span style={{ font: 'var(--type-caption)', color: 'var(--text-3)', paddingTop: 16, opacity: step > 4 ? 1 : 0, transition: 'opacity var(--dur-reveal)' }}>По вашему проекту покажем такой же расчет после запуска. Без наценки на AI-инфраструктуру</span>
     </div>
   );
 }
 
 export function Hero() {
-  const go = useGo();
-  const [shown, setShown] = React.useState(false);
-  React.useEffect(() => { const t = setTimeout(() => setShown(true), 40); return () => clearTimeout(t); }, []);
-  const reveal = (d: number): React.CSSProperties => ({
-    clipPath: shown ? 'inset(0 0 0 0)' : 'inset(0 0 100% 0)',
-    transform: shown ? 'none' : 'translateY(12px)',
-    transition: `clip-path var(--dur-reveal) var(--ease) ${d}ms, transform var(--dur-reveal) var(--ease) ${d}ms`,
-  });
   return (
-    <Container style={{ paddingTop: 72 }}>
-      <div className="grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(0,7fr) minmax(0,5fr)', gap: 'var(--grid-gutter)', alignItems: 'start' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 40 }}>
-          <h1 style={{ margin: 0, font: 'var(--type-display)', letterSpacing: 'var(--track-display)', maxWidth: 820, ...reveal(80) }}>Спецпроекты на скорости AI. С ответственностью студии</h1>
-          <div className="grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(0,4fr) minmax(0,3fr)', gap: 'var(--grid-gutter)', alignItems: 'start', ...reveal(240) }}>
-            <p className="pretty" style={{ margin: 0, font: 'var(--type-body-lg)', color: 'var(--text-2)' }}>Делаем промо-сайты, веб-игры, 3D и интерактивные продукты. AI берет на себя большую часть написания кода, наша команда — архитектуру, качество и запуск</p>
-            <p style={{ margin: 0, font: 'var(--type-body-sm)', color: 'var(--text-2)', paddingTop: 4, borderTop: '1px solid var(--line)' }}>Расход AI показываем по факту. Работу команды фиксируем заранее</p>
-          </div>
-          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', ...reveal(360) }}>
-            <Button size="lg" onClick={() => go(ROUTES.intake)}>Запустить проект</Button>
-            <Button size="lg" variant="secondary" onClick={() => go('/#cases')}>Смотреть кейсы</Button>
-          </div>
+    <section className="hero" aria-labelledby="hero-title">
+      <Container>
+        <div className="hero-eyebrow">
+          <span>Независимая digital-студия</span>
+          <span>Дизайн. Разработка. AI.</span>
         </div>
-        <ProductionCanvas />
-      </div>
-    </Container>
+        <div className="hero-grid">
+          <div className="hero-copy">
+            <h1 id="hero-title">
+              Сильный digital.
+              <br />
+              <span>На скорости AI.</span>
+            </h1>
+            <p className="hero-lead">
+              Сайты, игры и спецпроекты, которые хочется открывать. Вайбкодим с
+              вниманием к дизайну и ответственностью за каждый запуск
+            </p>
+            <div className="hero-actions">
+              <Link className="action action-primary" href="/#intake">
+                Начать проект <Arrow diagonal />
+              </Link>
+              <Link className="text-link" href="/#cases">
+                Смотреть в деле <Arrow />
+              </Link>
+            </div>
+          </div>
+          <ProductionCanvas />
+        </div>
+        <div className="hero-baseline">
+          <span>AI ускоряет код. Мы отвечаем за продукт.</span>
+          <a href="#economics">
+            Проекты от 100 000 ₽ <Arrow diagonal />
+          </a>
+        </div>
+      </Container>
+    </section>
   );
 }

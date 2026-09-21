@@ -129,7 +129,7 @@ function DemoLiveTokens() {
 
 export function KitPage() {
   return (
-    <main>
+    <main id="main">
       <Container style={{ paddingTop: 64, paddingBottom: 96 }}>
         <div className="grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(0,7fr) minmax(0,5fr)', gap: 'var(--grid-gutter)', alignItems: 'end' }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>

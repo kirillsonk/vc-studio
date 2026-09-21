@@ -1,116 +1,311 @@
-'use client';
-
-import React from 'react';
-import { BriefComposer, BriefMessage, Button, EstimatePanel, Field, OptionBlock, TextInput } from '@/components';
-import { Head, Section } from '../Chrome';
-
-interface Step {
-  q: string;
-  opts: string[];
-  scope?: (a: string) => string[];
-  term?: (a: string) => string;
-  budget?: (a: string) => string;
-}
-
-const SCRIPT: Step[] = [
-  {
-    q: 'Что нужно сделать?',
-    opts: ['Промо-сайт', 'Веб-игра', '3D / WebGL', 'Интерактивный спецпроект', 'Другое'],
-    scope: a => a === 'Другое' ? ['Спецпроект'] : [a],
-  },
-  {
-    q: 'Что проект должен сделать для бизнеса?',
-    opts: ['Поддержать рекламную кампанию', 'Вовлечь аудиторию', 'Собрать лиды', 'Запустить продукт', 'Пока формулируем'],
-    scope: a => a === 'Собрать лиды' ? ['Форма и CRM'] : a === 'Вовлечь аудиторию' ? ['Игровая механика', 'Лидерборд'] : ['Аналитика'],
-  },
-  {
-    q: 'Когда проект должен быть в проде?',
-    opts: ['До 7 дней', '1–2 недели', '3–4 недели', 'Срок гибкий'],
-    term: a => ({ 'До 7 дней': '5–7 рабочих дней', '1–2 недели': '8–12 рабочих дней', '3–4 недели': '15–20 рабочих дней', 'Срок гибкий': '10–15 рабочих дней' } as Record<string, string>)[a] || '8–12 рабочих дней',
-    scope: () => ['Адаптив', 'Деплой'],
-  },
-  {
-    q: 'Есть ориентир по бюджету?',
-    opts: ['100–200 тыс.', '200–350 тыс.', '350–500 тыс.', 'Нужна оценка'],
-    budget: a => ({ '100–200 тыс.': '120 000–190 000 ₽', '200–350 тыс.': '210 000–330 000 ₽', '350–500 тыс.': '360 000–480 000 ₽' } as Record<string, string>)[a] || '160 000–210 000 ₽',
-  },
+"use client";
+import React from "react";
+import { Container } from "../Chrome";
+import { Arrow } from "../Arrow";
+import { STUDIO_EMAIL, STUDIO_TELEGRAM } from "../constants";
+const SERVICES = [
+  "Промо-сайт",
+  "Игра или спецпроект",
+  "3D и интерактив",
+  "Production для агентства",
+  "Пока выбираем",
 ];
-
-interface Line { r: 'ai' | 'user'; t: string; i?: number; intro?: boolean }
-
-interface Estimate { scope: string[]; term?: string; budget?: string; status: 'empty' | 'thinking' | 'building' | 'ready' }
-
-export function Intake() {
-  const [log, setLog] = React.useState<Line[]>([
-    { r: 'ai', t: 'Расскажите, что хотите запустить. Можно без ТЗ. Я уточню несколько вещей и соберу предварительный scope, срок и вилку бюджета', intro: true },
-    { r: 'ai', t: SCRIPT[0].q, i: 1 },
-  ]);
-  const [step, setStep] = React.useState(0);
-  const [pending, setPending] = React.useState(false);
-  const [est, setEst] = React.useState<Estimate>({ scope: [], term: undefined, budget: undefined, status: 'empty' });
-  const [contact, setContact] = React.useState('');
-  const [sent, setSent] = React.useState(false);
-  const [err, setErr] = React.useState('');
-  const contactRef = React.useRef<HTMLInputElement>(null);
-  const done = step >= SCRIPT.length;
-
-  const answer = (a: string) => {
-    if (pending || done) return;
-    const s = SCRIPT[step];
-    setLog(l => [...l, { r: 'user', t: a }]);
-    setPending(true);
-    setEst(e => ({ ...e, status: 'thinking' }));
-    setTimeout(() => {
-      setEst(e => ({
-        scope: [...new Set([...e.scope, ...(s.scope ? s.scope(a) : [])])],
-        term: s.term ? s.term(a) : e.term,
-        budget: s.budget ? s.budget(a) : e.budget,
-        status: step + 1 >= SCRIPT.length ? 'ready' : 'building',
-      }));
-      const n = step + 1;
-      setStep(n);
-      setPending(false);
-      setLog(l => [...l, n < SCRIPT.length ? { r: 'ai', t: SCRIPT[n].q, i: n + 1 } : { r: 'ai', t: 'Куда отправить расчет и продолжить обсуждение?', i: n + 1 }]);
-    }, 800);
-  };
-
-  const send = () => {
-    const ok = /^@?[\w]{4,}$/.test(contact) || /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(contact);
-    if (!ok) { setErr(contact.startsWith('@') ? 'Нужен username в формате @username' : 'Проверьте адрес почты'); return; }
-    setErr('');
-    setSent(true);
-  };
-
+const STORAGE_KEY = "vc-studio-brief-v2";
+interface Draft {
+  service: string;
+  details: string;
+  deadline: string;
+  budget: string;
+}
+const EMPTY: Draft = {
+  service: SERVICES[0],
+  details: "",
+  deadline: "Срок гибкий",
+  budget: "Нужна оценка",
+};
+function isDraft(value: unknown): value is Draft {
+  if (!value || typeof value !== "object") return false;
+  const v = value as Draft;
   return (
-    <Section id="intake" pad={160} border>
-      <div style={{ paddingTop: 48 }}>
-        <Head index="08" title="Есть задача — посчитаем production" lead="Опишите проект своими словами. Без технического брифа. За несколько вопросов соберем предварительный scope, срок и бюджет" />
-        <div className="grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(0,7fr) minmax(0,5fr)', gap: 'var(--grid-gutter)', alignItems: 'start' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 24, borderTop: '1px solid var(--text)', paddingTop: 24 }}>
-            <span style={{ font: 'var(--type-index)', color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '.04em' }}>Project brief</span>
-            {log.map((m, k) => <BriefMessage key={k} role={m.r} index={m.i} style={m.intro ? { paddingBottom: 8 } : undefined}>{m.t}</BriefMessage>)}
-            {pending && <BriefMessage pending />}
-            {!pending && !done && (
-              <div className="grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, paddingLeft: 56 }}>
-                {SCRIPT[step].opts.map(o => <OptionBlock key={o} onClick={() => answer(o)}>{o}</OptionBlock>)}
-              </div>
-            )}
-            {!done ? (
-              <BriefComposer placeholder="Или напишите своими словами" onSend={answer} disabled={pending} style={{ marginLeft: 56 }} />
-            ) : !sent ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12, paddingLeft: 56 }}>
-                <Field error={err}>
-                  <TextInput ref={contactRef} placeholder="Email или Telegram" value={contact} onChange={e => setContact(e.target.value)} error={!!err} onKeyDown={e => e.key === 'Enter' && send()} />
-                </Field>
-                <div><Button onClick={send}>Получить точную оценку</Button></div>
-              </div>
-            ) : (
-              <BriefMessage index={6}>Расчет отправлен на {contact}. Инженер проверит scope и подтвердит стоимость перед стартом</BriefMessage>
-            )}
-          </div>
-          <EstimatePanel scope={est.scope} term={est.term} budget={est.budget} status={est.status} onConfirm={() => contactRef.current?.focus()} style={{ position: 'sticky', top: 104 }} />
+    SERVICES.includes(v.service) &&
+    ["details", "deadline", "budget"].every(
+      (k) => typeof v[k as keyof Draft] === "string",
+    )
+  );
+}
+export function Intake() {
+  const [step, setStep] = React.useState(0);
+  const [draft, setDraft] = React.useState<Draft>(EMPTY);
+  const [ready, setReady] = React.useState(false);
+  const [status, setStatus] = React.useState("");
+  const heading = React.useRef<HTMLLegendElement>(null);
+  React.useEffect(() => {
+    try {
+      const saved = JSON.parse(sessionStorage.getItem(STORAGE_KEY) || "null");
+      if (isDraft(saved)) setDraft(saved);
+    } catch {
+      /* Storage is optional */
+    }
+    const pickService = () => {
+      const index = new URLSearchParams(window.location.search).get("service");
+      if (index !== null && /^[0-3]$/.test(index)) {
+        setDraft((d) => ({ ...d, service: SERVICES[Number(index)] }));
+        setStep(0);
+      }
+    };
+    pickService();
+    window.addEventListener("popstate", pickService);
+    window.addEventListener("hashchange", pickService);
+    // Next navigation updates the query before the intake anchor receives focus.
+    const onClick = (e: MouseEvent) => {
+      const link = (e.target as Element).closest?.('a[href*="service="]');
+      if (link) {
+        const index = new URL(
+          link.getAttribute("href")!,
+          window.location.origin,
+        ).searchParams.get("service");
+        if (index !== null && /^[0-3]$/.test(index)) {
+          setDraft((d) => ({ ...d, service: SERVICES[Number(index)] }));
+          setStep(0);
+        }
+      }
+    };
+    document.addEventListener("click", onClick);
+    setReady(true);
+    return () => {
+      window.removeEventListener("popstate", pickService);
+      window.removeEventListener("hashchange", pickService);
+      document.removeEventListener("click", onClick);
+    };
+  }, []);
+  React.useEffect(() => {
+    if (ready)
+      try {
+        sessionStorage.setItem(STORAGE_KEY, JSON.stringify(draft));
+      } catch {}
+  }, [draft, ready]);
+  const change = (key: keyof Draft, value: string) => {
+    setDraft((d) => ({ ...d, [key]: value }));
+    setStatus("");
+  };
+  const move = (n: number) => {
+    setStep(n);
+    setStatus("");
+    requestAnimationFrame(() => heading.current?.focus());
+  };
+  const summary = `Бриф для VC Studio\n\nФормат: ${draft.service}\nЗадача: ${draft.details || "Обсудим вместе"}\nЖелаемый срок: ${draft.deadline}\nОриентир по бюджету: ${draft.budget}\n\nСтоимость и срок подтверждаются после оценки задачи командой.`;
+  const download = () => {
+    const url = URL.createObjectURL(
+      new Blob([summary], { type: "text/plain;charset=utf-8" }),
+    );
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "vc-studio-brief.txt";
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    setStatus("Бриф подготовлен для скачивания. Это не отправка заявки");
+  };
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(summary);
+      setStatus("Бриф скопирован — его можно отправить студии");
+    } catch {
+      setStatus("Не удалось скопировать. Скачайте бриф файлом");
+    }
+  };
+  return (
+    <section id="intake" className="editorial-section intake-section">
+      <Container>
+        <div className="section-kicker">
+          <span>06 / Начнем с вашей идеи</span>
         </div>
-      </div>
-    </Section>
+        <div className="intake-shell">
+          <div className="intake-aside">
+            <h2>
+              Что создадим
+              <br />
+              вместе?
+            </h2>
+            <p>
+              Можно без ТЗ. Несколько деталей помогут нам понять задачу и
+              оценить объем работы
+            </p>
+            <ol className="brief-steps">
+              {["Формат", "Детали", "Бриф"].map((s, i) => (
+                <li key={s} aria-current={step === i ? "step" : undefined}>
+                  0{i + 1} {s}
+                </li>
+              ))}
+            </ol>
+            <div className="intake-contact">
+              {STUDIO_TELEGRAM && (
+                <a
+                  className="text-link"
+                  href={`https://t.me/${STUDIO_TELEGRAM.replace("@", "")}`}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Сразу в Telegram <Arrow diagonal />
+                </a>
+              )}
+              {STUDIO_EMAIL && (
+                <a className="text-link" href={`mailto:${STUDIO_EMAIL}`}>
+                  {STUDIO_EMAIL} <Arrow diagonal />
+                </a>
+              )}
+            </div>
+          </div>
+          <form
+            className="brief-form"
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (step < 2) move(step + 1);
+            }}
+          >
+            <fieldset>
+              <legend ref={heading} tabIndex={-1}>
+                {
+                  [
+                    "Что хотите запустить?",
+                    "Расскажите о задаче",
+                    "Ваш проект — в одном брифе",
+                  ][step]
+                }
+              </legend>
+              {step === 0 && (
+                <div className="brief-options">
+                  {SERVICES.map((s) => (
+                    <label className="brief-choice" key={s}>
+                      <input
+                        type="radio"
+                        name="service"
+                        value={s}
+                        checked={draft.service === s}
+                        onChange={() => change("service", s)}
+                      />
+                      <span>{s}</span>
+                    </label>
+                  ))}
+                </div>
+              )}
+              {step === 1 && (
+                <div className="brief-fields">
+                  <label className="brief-field full">
+                    Что должно получиться?
+                    <textarea
+                      value={draft.details}
+                      onChange={(e) => change("details", e.target.value)}
+                      maxLength={3000}
+                      placeholder="Для кого проект, какую задачу решает, что уже готово"
+                    />
+                  </label>
+                  <label className="brief-field">
+                    Желаемый срок
+                    <select
+                      value={draft.deadline}
+                      onChange={(e) => change("deadline", e.target.value)}
+                    >
+                      <option>Срок гибкий</option>
+                      <option>До 2 недель</option>
+                      <option>В течение месяца</option>
+                      <option>Есть конкретная дата</option>
+                    </select>
+                  </label>
+                  <label className="brief-field">
+                    Ориентир по бюджету
+                    <select
+                      value={draft.budget}
+                      onChange={(e) => change("budget", e.target.value)}
+                    >
+                      <option>Нужна оценка</option>
+                      <option>100–200 тыс. ₽</option>
+                      <option>200–500 тыс. ₽</option>
+                      <option>От 500 тыс. ₽</option>
+                    </select>
+                  </label>
+                </div>
+              )}
+              {step === 2 && (
+                <dl className="brief-summary">
+                  {[
+                    ["Формат", draft.service],
+                    ["Задача", draft.details || "Обсудим вместе"],
+                    ["Срок", draft.deadline],
+                    ["Бюджет", draft.budget],
+                  ].map(([k, v]) => (
+                    <div key={k}>
+                      <dt>{k}</dt>
+                      <dd>{v}</dd>
+                    </div>
+                  ))}
+                </dl>
+              )}
+            </fieldset>
+            <div className="brief-footer">
+              {step > 0 && (
+                <button
+                  className="brief-back"
+                  type="button"
+                  onClick={() => move(step - 1)}
+                >
+                  Назад
+                </button>
+              )}
+              {step < 2 ? (
+                <button type="submit" className="action action-primary">
+                  {step === 0 ? "Дальше" : "Собрать бриф"}
+                  <Arrow />
+                </button>
+              ) : (
+                <>
+                  {STUDIO_EMAIL && (
+                    <a
+                      className="action action-primary"
+                      href={`mailto:${STUDIO_EMAIL}?subject=${encodeURIComponent("Проект для VC Studio")}&body=${encodeURIComponent(summary)}`}
+                    >
+                      Открыть письмо
+                      <Arrow diagonal />
+                    </a>
+                  )}
+                  {STUDIO_TELEGRAM && (
+                    <a
+                      className="action action-primary"
+                      href={`https://t.me/${STUDIO_TELEGRAM.replace("@", "")}?text=${encodeURIComponent(summary)}`}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      Передать бриф в Telegram
+                      <Arrow diagonal />
+                    </a>
+                  )}
+                  <button
+                    type="button"
+                    className={
+                      STUDIO_EMAIL || STUDIO_TELEGRAM
+                        ? "brief-back"
+                        : "action action-primary"
+                    }
+                    onClick={download}
+                  >
+                    Скачать бриф
+                  </button>
+                  <button type="button" className="brief-back" onClick={copy}>
+                    Скопировать
+                  </button>
+                </>
+              )}
+            </div>
+            <p className="brief-note">
+              {step === 2
+                ? "Стоимость и срок подтвердим после разбора задачи. Бриф не отправляется автоматически"
+                : "Ответы сохраняются в этой вкладке. Можно вернуться и изменить их"}
+            </p>
+            <p className="brief-status" role="status">
+              {status}
+            </p>
+          </form>
+        </div>
+      </Container>
+    </section>
   );
 }

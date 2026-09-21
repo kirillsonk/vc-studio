@@ -70,7 +70,7 @@ export function DeployRun() {
     score: 0, combo: 1, shipped: 0, flash: 0, flashOk: true, endsAt: 0, phase: 'countdown' as Phase,
   });
 
-  React.useEffect(() => { setBest(loadScores()); }, []);
+  React.useEffect(() => { setBest(loadScores()); canvasRef.current?.focus({ preventScroll: true }); }, []);
 
   React.useEffect(() => {
     if (phase !== 'countdown') return;
@@ -112,15 +112,7 @@ export function DeployRun() {
     r.center = next;
   }, []);
 
-  React.useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key !== ' ' && e.key !== 'Enter') return;
-      e.preventDefault();
-      hit();
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [hit]);
+
 
   React.useEffect(() => {
     const canvas = canvasRef.current;
@@ -251,7 +243,7 @@ export function DeployRun() {
   const num = { font: 'var(--type-num-sm)', letterSpacing: 'var(--track-num)', fontFeatureSettings: 'var(--num-features)', color: 'var(--contrast-ink)' } as const;
 
   return (
-    <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column' }}>
+    <div className="deploy-game" style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 24, padding: '20px 24px', borderBottom: '1px solid var(--contrast-line)' }}>
         <div style={{ display: 'flex', gap: 32 }}>
           <span style={{ display: 'flex', flexDirection: 'column', gap: 4 }}><span data-num style={num}>{score.toLocaleString('ru-RU')}</span><span style={hud}>счет</span></span>
@@ -264,7 +256,11 @@ export function DeployRun() {
       <div style={{ position: 'relative', flex: 1, minHeight: 0 }}>
         <canvas
           ref={canvasRef}
-          onPointerDown={e => { e.preventDefault(); hit(); }}
+          tabIndex={0}
+          role="button"
+          aria-label="Поле Deploy Run. Нажмите пробел или Enter, когда маркер находится в окне деплоя"
+          onKeyDown={e => { if ((e.key === ' ' || e.key === 'Enter') && !e.repeat) { e.preventDefault(); hit(); } }}
+          onPointerDown={e => { e.preventDefault(); e.currentTarget.focus(); hit(); }}
           style={{ width: '100%', height: '100%', display: 'block', cursor: phase === 'playing' ? 'pointer' : 'default', touchAction: 'manipulation' }}
         />
 
@@ -285,12 +281,12 @@ export function DeployRun() {
                 <span style={{ font: 'var(--type-body-sm)', color: 'var(--contrast-ink-2)' }}>{shipped} успешных деплоев за 30 секунд</span>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8, width: '100%' }}>
-                <span style={{ font: 'var(--type-caption)', color: 'var(--contrast-ink-2)', textTransform: 'uppercase', letterSpacing: '.04em' }}>Промокод за прохождение</span>
+                <span style={{ font: 'var(--type-caption)', color: 'var(--contrast-ink-2)', textTransform: 'uppercase', letterSpacing: '.04em' }}>Демонстрационный код</span>
                 <span data-num style={{ font: 'var(--type-h4)', letterSpacing: '.08em', color: 'var(--positive)', border: '1px solid var(--contrast-line)', borderRadius: 'var(--radius-md)', padding: '12px 16px' }}>{promoCode(score)}</span>
               </div>
               {best.length > 0 && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 6, width: '100%' }}>
-                  <span style={{ font: 'var(--type-caption)', color: 'var(--contrast-ink-2)', textTransform: 'uppercase', letterSpacing: '.04em' }}>Лидерборд на этом устройстве</span>
+                  <span style={{ font: 'var(--type-caption)', color: 'var(--contrast-ink-2)', textTransform: 'uppercase', letterSpacing: '.04em' }}>Рекорды на этом устройстве</span>
                   {best.map((b, i) => (
                     <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: i < best.length - 1 ? '1px solid var(--contrast-line)' : 'none' }}>
                       <span data-num style={{ font: 'var(--type-body-sm)', color: 'var(--contrast-ink-2)' }}>{String(i + 1).padStart(2, '0')}</span>

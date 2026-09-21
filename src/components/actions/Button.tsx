@@ -55,7 +55,7 @@ export function Button({ variant = 'primary', size = 'md', disabled, loading, ic
   else if (variant === 'secondary') look = { background: hover ? 'var(--surface)' : 'transparent', color: 'var(--text)', borderColor: hover ? 'var(--text)' : 'var(--line-strong)' };
   else look = { background: 'transparent', color: hover ? 'var(--brand)' : 'var(--text)' };
   return (
-    <button type="button" disabled={off} aria-busy={loading || undefined} style={{ ...base, ...look, ...style }} onMouseEnter={() => setHover(true)} onMouseLeave={() => { setHover(false); setPress(false); }} onMouseDown={() => setPress(true)} onMouseUp={() => setPress(false)} {...rest}>
+    <button type="button" disabled={off} aria-busy={loading || undefined} className={`vc-button vc-button--${variant}`} style={{ ...base, ...look, ...style }} onMouseEnter={() => setHover(true)} onMouseLeave={() => { setHover(false); setPress(false); }} onMouseDown={() => setPress(true)} onMouseUp={() => setPress(false)} {...rest}>
       {loading ? <span aria-hidden style={{ width: 14, height: 14, borderRadius: '50%', border: '1.5px solid currentColor', borderRightColor: 'transparent', animation: 'vc-spin .8s linear infinite' }} /> : icon}
       <span>{children}</span>
       {!loading && iconRight}

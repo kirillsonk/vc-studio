@@ -1,30 +1,74 @@
-'use client';
-
-import React from 'react';
-import Link from 'next/link';
-import { Button } from '@/components';
-import { Container } from './Chrome';
-import { HOME_SECTIONS, ROUTES } from './constants';
-import { useGo } from './navigation';
-
+"use client";
+import React from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { Container } from "./Chrome";
+import { HOME_SECTIONS } from "./constants";
+import { Arrow } from "./Arrow";
 export function Nav() {
-  const go = useGo();
-  const [scrolled, setScrolled] = React.useState(false);
-  React.useEffect(() => {
-    const f = () => setScrolled(window.scrollY > 8);
-    f();
-    window.addEventListener('scroll', f);
-    return () => window.removeEventListener('scroll', f);
-  }, []);
+  const [open, setOpen] = React.useState(false);
+  const path = usePathname();
+  const menuRef = React.useRef<HTMLButtonElement>(null);
+  React.useEffect(() => setOpen(false), [path]);
   return (
-    <header className="vc-header" style={{ background: 'var(--canvas)', borderBottom: `1px solid ${scrolled ? 'var(--line)' : 'transparent'}`, transition: 'border-color var(--dur-ui)' }}>
-      <Container style={{ height: 'var(--header-h)', display: 'flex', alignItems: 'center', gap: 40 }}>
-        <Link href={ROUTES.home} style={{ font: '500 22px/1 var(--font-sans)', letterSpacing: '-.04em', color: 'var(--text)' }}>VC Studio</Link>
-        <nav className="nav-links" style={{ display: 'flex', gap: 32, flex: 1, justifyContent: 'flex-end' }}>
-          {HOME_SECTIONS.map(([k, l]) => <Link key={k} href={`/#${k}`} style={{ font: 'var(--type-body-sm)', color: 'var(--text-2)' }}>{l}</Link>)}
+    <header
+      className="vc-header"
+      onKeyDown={(e) => {
+        if (e.key === "Escape") {
+          setOpen(false);
+          menuRef.current?.focus();
+        }
+      }}
+    >
+      <Container className="nav-inner">
+        <Link
+          href="/"
+          className="wordmark"
+          aria-label="VC Studio — главная"
+          onClick={() => setOpen(false)}
+        >
+          vc<span className="wordmark-slash">/</span>studio
+        </Link>
+        <nav className="nav-links" aria-label="Основная навигация">
+          {HOME_SECTIONS.map(([id, label]) => (
+            <Link key={id} href={`/#${id}`}>
+              {label}
+            </Link>
+          ))}
         </nav>
-        <Button size="sm" onClick={() => go(ROUTES.intake)}>Запустить проект</Button>
+        <Link
+          className="nav-cta"
+          href="/#intake"
+          onClick={() => setOpen(false)}
+        >
+          Начать проект <Arrow diagonal />
+        </Link>
+        <button
+          className="menu-toggle"
+          ref={menuRef}
+          type="button"
+          aria-expanded={open}
+          aria-controls="mobile-nav"
+          aria-label={open ? "Закрыть меню" : "Открыть меню"}
+          onClick={() => setOpen(!open)}
+        >
+          <span />
+          <span />
+        </button>
       </Container>
+      <nav
+        id="mobile-nav"
+        className="mobile-nav"
+        aria-label="Мобильная навигация"
+        hidden={!open}
+      >
+        {HOME_SECTIONS.map(([id, label]) => (
+          <Link key={id} href={`/#${id}`} onClick={() => setOpen(false)}>
+            {label}
+            <Arrow diagonal />
+          </Link>
+        ))}
+      </nav>
     </header>
   );
 }

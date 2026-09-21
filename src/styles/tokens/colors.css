@@ -1,27 +1,27 @@
 :root{
 /* base */
---canvas:#F5F5F2;
+--canvas:#F5F4F0;
 --surface:#FFFFFF;
---surface-2:#EDEDE9;
+--surface-2:#ECEBE5;
 --ink:#111214;
 --ink-2:#62666D;
---ink-3:#92969D;
+--ink-3:#70736D;
 --line:#D9DAD6;
 --line-strong:#BFC1BC;
---vermilion:#D9451A;
+--vermilion:#C94320;
 --vermilion-hover:#BF3A13;
 --vermilion-press:#A3300E;
 --vermilion-soft:#FBEAE3;
 --blue:#3157FF;          /* secondary accent — data viz, rare highlights; never the primary */
 --blue-soft:#E8ECFF;
---green:#0FAF7A;
+--green:#087F5B;
 --green-soft:#E4F7EF;
 --amber:#B98A00;
 --amber-soft:#F8F0D6;
 --red:#B3213C;
 --red-soft:#F9E3E8;
 --contrast:#111214;
---contrast-ink:#F5F5F2;
+--contrast-ink:#F5F4F0;
 --contrast-ink-2:#A3A6AC;
 --contrast-line:#2A2C30;
 /* semantic */

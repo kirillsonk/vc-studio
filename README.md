@@ -1,70 +1,56 @@
 # VC Studio
 
-Сайт и дизайн-система AI-native production-студии: промо-сайты, digital-спецпроекты, интерактивные лендинги, веб-игры, браузерные 3D/WebGL-проекты.
+Лендинг независимой digital-студии: дизайн, сайты, игры, интерактив и production с AI под управлением инженеров.
 
-**Стек:** Next.js 15 (App Router) · React 18 · TypeScript · CSS custom properties. Без CSS-in-JS и UI-библиотек — стилизация идёт через токены дизайн-системы.
+**Next.js 15 · React 18 · TypeScript · CSS · Onest**
 
-## Быстрый старт
+## Локально
 
 ```bash
-npm install
-npm run dev      # http://localhost:3000
-npm run build    # production-сборка
+npm ci
+npm run dev
 npm run typecheck
+npm run build
+python3 -m http.server 3100 --directory out
 ```
 
-## Маршруты
+Production собирается как статический Next.js export в `out/`. Онлайн-версия размещается в Sites; `.openai/hosting.json` хранит привязку проекта. Статический хостинг должен раздавать directory index для `/case/`, `/report/` и `/kit/`.
 
-| Путь | Экран |
-| --- | --- |
-| `/` | Главная: hero с живым production canvas, демо, кейсы, что делаем, экономика, сравнение моделей, процесс, агентства, FAQ, AI-заявка |
-| `/case` | Кейс проекта: факты, демо, задача/решение/срок, timeline, сравнение |
-| `/report` | Production-отчёт: итоговый бюджет, ledger, разбивка по этапам и по моделям |
-| `/kit` | Витрина дизайн-системы: 19 компонентов в шести группах со всеми состояниями |
+## Страницы
+
+- `/` — услуги, рабочее игровое демо, экономика, процесс, FAQ и бриф
+- `/case` — устройство собственного демо Deploy Run
+- `/report` — маркированный пример production-отчета, детализация и экспорт CSV
+- `/kit` — библиотека компонентов
+
+## Контакты и бриф
+
+Скопируйте `.env.example` в `.env.local`, укажите проверенный публичный email и/или Telegram username студии. Для production задайте те же переменные в окружении сборки. Значения `NEXT_PUBLIC_*` попадают в клиентский код и не должны содержать секреты.
+
+Бриф — локальная форма из трех шагов, а не подключенная LLM. Он сохраняет ответы в `sessionStorage` текущей вкладки, позволяет редактировать их, скачивать TXT или копировать. При настроенном контакте посетитель открывает письмо/Telegram с брифом и сам завершает отправку. Серверной доставки и подтверждения получения пока нет. Без настроенных контактов доступны только скачивание и копирование; это не готовый канал приема заявок.
+
+Ссылки услуг вида `/?service=2#intake` заранее выбирают формат в брифе.
+
+## Дизайн
+
+Актуальные правила — `BRAND.md`. Токены в `src/styles/tokens/`, адаптивная композиция в `src/styles/site.css`. Onest загружается при сборке через `next/font/google` и раздается локально. Первая сборка требует доступа к Google Fonts.
+
+Теплый светлый фон, графит, глубокий вермильон, крупная типографика. CTA со срезом угла. SVG-лента с одноразовой анимацией и поддержкой reduced motion. Никаких внешних UI- или 3D-библиотек не добавлено.
+
+## Демо и данные
+
+Deploy Run запускается по нажатию. Управление: касание/клик по полю или Enter/пробел при фокусе на нем. Рекорды локальные, код награды демонстрационный. Игра не перехватывает клавиатуру у остальной страницы.
+
+Все суммы, сроки и токены на `/report` условные. Они не являются реальными расходами студии или рыночными бенчмарками. Это обозначено перед цифрами и внутри экспорта CSV. Главная не содержит вымышленных клиентов, неподтвержденной экономии и случайного счетчика AI-расхода.
 
 ## Структура
 
-```
-BRAND.md                  ← дизайн-код и Tone of Voice, source of truth
-src/
-  app/                    маршруты App Router + layout (шрифт, Nav, Footer)
-  components/             19 компонентов дизайн-системы в шести группах
-    actions/              Button
-    forms/                TextInput · Textarea · Select · Field · Checkbox · OptionBlock · Chip
-    numbers/              Counter · Stat · Ledger · Compare
-    content/              CaseCard · Tag · Trace
-    demo/                 DemoBlock
-    intake/               BriefMessage · BriefComposer · EstimatePanel
-    index.ts              публичный барель библиотеки
-  site/
-    Chrome.tsx            Container · Section · Head
-    Nav.tsx · Footer.tsx
-    constants.ts          навигация и маршруты
-    data.ts               demo-данные кейсов и отчёта
-    sections/             секции главной
-    pages/                CasePage · ReportPage · KitPage
-  styles/
-    styles.css            единая точка входа (@import-ы)
-    tokens/               colors · typography · spacing · effects · fonts · base
-    animations.css        keyframes компонентов
-    site.css              сетка, адаптив, утилиты
-project/                  исходный экспорт из Claude Design (прототипы, референс)
-chats/                    транскрипты проектирования
-```
+- `src/app/` — маршруты и общая оболочка
+- `src/site/sections/` — секции лендинга и общий Playground
+- `src/site/pages/` — страницы проекта, отчета и библиотеки
+- `src/site/game/` — canvas-игра
+- `src/components/` — базовые компоненты
+- `src/styles/` — токены, анимации, адаптив
+- `project/`, `chats/` — исторические материалы, не текущие инструкции
 
-## Дизайн-система
-
-Токены — CSS custom properties в `src/styles/tokens/`, подключаются одним файлом `src/styles/styles.css`.
-
-Ключевое: canvas `#F5F5F2`, ink `#111214`, бренд — вермильон `#D9451A`, сигнальный зелёный `#0FAF7A` только для семантики (live, ready, включено, разница). Синий `#3157FF` — вторичный акцент для данных, не для кнопок. Одна гарнитура **Onest Variable** (self-hosted через `next/font/google`), все числа табличные. Радиусы 4 / 8 / 12, тени только у floating UI.
-
-Полные правила — в [`BRAND.md`](./BRAND.md). Любой новый текст и любое визуальное решение сверяются с ним.
-
-## Данные
-
-Все числа в интерфейсе — демонстрационные (`src/site/data.ts`). Список того, что нужно заменить реальными значениями перед публикацией, — в разделе 32 `BRAND.md`.
-
-## Источники
-
-- Дизайн-система собрана в [Claude Design](https://claude.ai/design); экспорт лежит в `project/`, транскрипты — в `chats/`.
-- Репозиторий: https://github.com/kirillsonk/vc-studio
+Репозиторий: https://github.com/kirillsonk/vc-studio

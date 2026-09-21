@@ -1,54 +1,98 @@
-'use client';
-
-import React from 'react';
-import { Button, Stat } from '@/components';
-import { Head, Section } from '../Chrome';
-import { Media } from '../Media';
-import { DEMO_CASE } from '../data';
-import { ROUTES } from '../constants';
-import { useGo } from '../navigation';
-
-/**
- * One demonstration project, full width. The visual is the card; facts sit in a single
- * aligned row beneath it so nothing on the left has to line up with a differently sized card on the right
- */
+"use client";
+import React from "react";
+import Link from "next/link";
+import { Container } from "../Chrome";
+import { Arrow } from "../Arrow";
+import { DeployRun } from "../game/DeployRun";
 export function Cases() {
-  const go = useGo();
-  const c = DEMO_CASE;
-  const [hover, setHover] = React.useState(false);
   return (
-    <Section id="cases" pad={160}>
-      <Head index="02" title="Проект с открытой экономикой" lead="Клиентских кейсов здесь пока нет, и мы их не придумываем. Вместо них один проект, собранный для этого сайта: с реальным сроком, бюджетом и расходом AI" />
-      <div
-        role="link"
-        tabIndex={0}
-        onClick={() => go(ROUTES.case)}
-        onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(ROUTES.case); } }}
-        onMouseEnter={() => setHover(true)}
-        onMouseLeave={() => setHover(false)}
-        style={{ display: 'flex', flexDirection: 'column', gap: 32, cursor: 'pointer', outlineOffset: 8 }}
-      >
-        <div style={{ position: 'relative', aspectRatio: '21/9', background: 'var(--surface-2)', borderRadius: 'var(--radius-lg)', overflow: 'hidden', border: '1px solid var(--line)' }}>
-          <div style={{ position: 'absolute', inset: 0, transform: hover ? 'scale(1.02)' : 'none', transition: 'transform var(--dur-reveal) var(--ease)' }}>
-            <Media {...c.media} />
-          </div>
+    <section id="cases" className="editorial-section showcase-section">
+      <Container>
+        <div className="section-kicker">
+          <span>01 / В деле</span>
+          <span>Собственный эксперимент студии</span>
         </div>
-        <div className="grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(0,7fr) minmax(0,5fr)', gap: 'var(--grid-gutter)', alignItems: 'start' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            <span style={{ font: 'var(--type-caption)', color: 'var(--text-3)' }}>{c.index} / {c.kind}</span>
-            <h3 style={{ margin: 0, font: 'var(--type-h3)', letterSpacing: 'var(--track-h3)', color: hover ? 'var(--brand)' : 'var(--text)', transition: 'color var(--dur-micro)' }}>{c.title}</h3>
-            <p className="pretty" style={{ margin: 0, font: 'var(--type-body)', color: 'var(--text-2)', maxWidth: 560 }}>{c.lead}</p>
-          </div>
-          <div className="grid3" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,minmax(0,1fr))', gap: 'var(--grid-gutter)', paddingTop: 20, borderTop: '1px solid var(--text)' }}>
-            <Stat value={c.days} suffix=" дней" label="до запуска" size="md" />
-            <Stat value={c.budget} suffix=" ₽" label="бюджет проекта" size="md" />
-            <Stat value={c.aiCost} suffix=" ₽" label="из них AI-расход" size="md" />
-          </div>
+        <div className="section-heading">
+          <h2>
+            Хороший digital
+            <br />
+            чувствуется в деле
+          </h2>
+          <p>
+            Поэтому здесь можно поиграть. Собрали короткую браузерную механику —
+            такую можно встроить в кампанию, запуск продукта или спецпроект
+          </p>
         </div>
-      </div>
-      <div style={{ paddingTop: 32 }}>
-        <Button variant="secondary" onClick={() => go(ROUTES.case)}>Открыть проект</Button>
-      </div>
-    </Section>
+        <Playground />
+        <div className="project-caption">
+          <div>
+            <h3>Deploy Run</h3>
+            <p>Браузерная игра · Демо-проект · 2026</p>
+          </div>
+          <Link href="/case" className="text-link">
+            Как это устроено <Arrow diagonal />
+          </Link>
+        </div>
+      </Container>
+    </section>
+  );
+}
+
+export function Playground() {
+  const [playing, setPlaying] = React.useState(false);
+  return (
+    <div className={`game-stage ${playing ? "is-playing" : ""}`}>
+      {playing ? (
+        <>
+          <DeployRun />
+          <button
+            className="game-close"
+            onClick={() => setPlaying(false)}
+            aria-label="Закрыть игру"
+          >
+            Закрыть <span aria-hidden="true">×</span>
+          </button>
+        </>
+      ) : (
+        <>
+          <div className="game-poster" aria-hidden="true">
+            <span className="poster-cross cross-one">+</span>
+            <span className="poster-cross cross-two">+</span>
+            <div className="poster-orbit orbit-one" />
+            <div className="poster-orbit orbit-two" />
+            <div className="poster-orbit orbit-three" />
+            <div className="poster-beam" />
+            <div className="poster-type">
+              deploy<span>run_</span>
+            </div>
+            <div className="poster-target">
+              <i />
+              <i />
+              <i />
+              <i />
+            </div>
+          </div>
+          <div className="game-poster-top">
+            <span>VC / Playground</span>
+            <span>Одна кнопка. Тридцать секунд.</span>
+          </div>
+          <button
+            className="action action-light game-launch"
+            onClick={() => setPlaying(true)}
+          >
+            <svg
+              aria-hidden="true"
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+            >
+              <path d="m8 5 11 7-11 7z" />
+            </svg>
+            Запустить игру
+          </button>
+        </>
+      )}
+    </div>
   );
 }

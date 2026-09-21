@@ -1,33 +1,64 @@
-import React from 'react';
-import { Section } from '../Chrome';
-
-const ITEMS: Array<[title: string, detail: string]> = [
-  ['Промо-сайты', 'Кампании, запуски, продуктовые страницы с интерактивом и анимацией'],
-  ['Веб-игры', 'Короткие браузерные механики с лидербордами, промокодами и аналитикой'],
-  ['3D / WebGL', 'Конфигураторы, сцены и визуализации, которые работают без установки'],
-  ['Спецпроекты', 'Нестандартная механика под конкретную рекламную идею'],
-  ['Production для агентств', 'Frontend, backend, интеграции и запуск по готовому дизайну'],
+import Link from "next/link";
+import { Container } from "../Chrome";
+import { Arrow } from "../Arrow";
+const ITEMS = [
+  [
+    "Промо-сайты",
+    "Для запусков, в которых важен первый контакт с брендом",
+    "Дизайн · Анимация · Интеграции",
+  ],
+  [
+    "Игры и спецпроекты",
+    "Когда аудиторию нужно вовлечь, а не просто рассказать",
+    "Механики · Геймификация · Аналитика",
+  ],
+  [
+    "3D и интерактив",
+    "Когда продукт лучше один раз покрутить, чем долго описывать",
+    "WebGL · Конфигураторы · Визуализации",
+  ],
+  [
+    "Production для агентств",
+    "Когда сильной идее нужна команда, которая ее реализует",
+    "Frontend · Backend · QA и запуск",
+  ],
 ];
-
 export function WhatWeDo() {
   return (
-    <Section id="what" pad={160} border>
-      <div className="grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(0,5fr) minmax(0,7fr)', gap: 'var(--grid-gutter)', paddingTop: 48 }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-          <span data-num style={{ font: 'var(--type-index)', color: 'var(--text-3)' }}>03</span>
-          <h2 style={{ margin: 0, font: 'var(--type-h2)', letterSpacing: 'var(--track-h2)' }}>Что делаем</h2>
-          <p style={{ margin: 0, font: 'var(--type-body)', color: 'var(--text-2)', maxWidth: 400 }}>Бюджеты от 100 000 ₽. Верхней границы нет: тот же production собирает проекты, за которые классическая студия берет несколько миллионов</p>
+    <section id="what" className="editorial-section">
+      <Container>
+        <div className="section-kicker">
+          <span>02 / Возможности</span>
         </div>
-        <div>
-          {ITEMS.map(([t, d], i) => (
-            <div key={t} style={{ display: 'grid', gridTemplateColumns: '48px minmax(0,1fr) minmax(0,1.4fr)', gap: 'var(--grid-gutter)', padding: '24px 0', borderBottom: '1px solid var(--line)', alignItems: 'baseline' }}>
-              <span data-num style={{ font: 'var(--type-index)', color: 'var(--text-3)' }}>{String(i + 1).padStart(2, '0')}</span>
-              <span style={{ font: 'var(--type-h4)', letterSpacing: 'var(--track-h4)' }}>{t}</span>
-              <span style={{ font: 'var(--type-body-sm)', color: 'var(--text-2)' }}>{d}</span>
-            </div>
+        <div className="section-heading">
+          <h2>
+            От первого впечатления
+            <br />
+            до последнего клика
+          </h2>
+          <p>
+            Подбираем формат под задачу бизнеса. Продумываем сценарий, собираем
+            дизайн и доводим до работающего продукта
+          </p>
+        </div>
+        <div className="services-list">
+          {ITEMS.map(([title, desc, meta], i) => (
+            <Link
+              href={`/?service=${i}#intake`}
+              className="service-row"
+              key={title}
+            >
+              <span className="service-index">0{i + 1}</span>
+              <h3>{title}</h3>
+              <div>
+                <p>{desc}</p>
+                <span>{meta}</span>
+              </div>
+              <Arrow diagonal />
+            </Link>
           ))}
         </div>
-      </div>
-    </Section>
+      </Container>
+    </section>
   );
 }

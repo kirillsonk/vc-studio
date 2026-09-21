@@ -22,11 +22,11 @@
 --type-lead:400 22px/1.4 var(--font-sans);
 --type-body-lg:400 20px/1.5 var(--font-sans);
 --type-body:400 17px/1.55 var(--font-sans);
---type-body-sm:400 15px/1.5 var(--font-sans);
---type-caption:400 13px/1.4 var(--font-sans);
+--type-body-sm:400 16px/1.5 var(--font-sans);
+--type-caption:400 16px/1.5 var(--font-sans);
 --type-label:500 15px/1 var(--font-sans);
---type-label-sm:500 13px/1 var(--font-sans);
---type-index:500 13px/1 var(--font-sans);   /* 01 02 03 technical index labels */
+--type-label-sm:500 15px/1.2 var(--font-sans);
+--type-index:500 15px/1.2 var(--font-sans);   /* 01 02 03 technical index labels */
 --track-body:0; /* @kind other */
 --track-label:0; /* @kind other */
 --track-caption:0.01em;
