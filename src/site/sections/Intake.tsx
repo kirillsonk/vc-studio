@@ -69,10 +69,10 @@ export function Intake() {
   const save = () => {
     try {
       sessionStorage.setItem(BRIEF_STORAGE_KEY, JSON.stringify(draft));
-      setStatus("Черновик сохранен в этой вкладке. Заявка пока не отправлена.");
+      setStatus("Черновик сохранен в этой вкладке. Заявка пока не отправлена");
     } catch {
       setStatus(
-        "Браузер не разрешил сохранить черновик. Оставьте страницу открытой, чтобы не потерять текст.",
+        "Браузер не разрешил сохранить черновик. Оставьте страницу открытой, чтобы не потерять текст",
       );
     }
   };
@@ -91,7 +91,7 @@ export function Intake() {
             </h2>
             <p>
               Опишите идею своими словами. Можно добавить ссылку на пример.
-              Готовое ТЗ не обязательно.
+              Готовое ТЗ не обязательно
             </p>
             <div className="intake-contact">
               {STUDIO_TELEGRAM && (
@@ -117,7 +117,7 @@ export function Intake() {
               e.preventDefault();
               if (!draft.details.trim()) {
                 textarea.current?.setCustomValidity(
-                  "Опишите задачу хотя бы в нескольких словах.",
+                  "Опишите задачу хотя бы в нескольких словах",
                 );
                 textarea.current?.reportValidity();
                 return;
@@ -162,7 +162,7 @@ export function Intake() {
                       e.target.setCustomValidity("");
                       change("details", e.target.value);
                     }}
-                    placeholder="Например: нужен сайт нового бренда с каталогом. Дизайн пока обсуждаем, запуск планируем к осени."
+                    placeholder="Например: нужен сайт нового бренда с каталогом. Дизайн пока обсуждаем, запуск планируем к осени"
                   />
                 </label>
                 {draft.service !== "Пока не определен" && (
@@ -249,7 +249,7 @@ export function Intake() {
             </div>
             <p className="brief-note">
               Отправка заявок пока недоступна. Можно подготовить черновик, он
-              останется в этой вкладке.
+              останется в этой вкладке
             </p>
             <p className="brief-status" role="status">
               {status}

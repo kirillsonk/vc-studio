@@ -12,41 +12,34 @@ export function Economics() {
               <span>Экономика проекта</span>
             </div>
             <h2>
-              Разработка дешевле.
-              <br />
-              За счет AI.
+              Платите за задачу,
+              <br />а не за часы
             </h2>
             <p className="section-lead">
-              Сокращаем ручную разработку с помощью AI. Вы платите за решение
-              задачи с меньшими затратами на написание кода. Дизайн,
-              функциональность и проверка остаются в проекте.
+              AI сокращает время на код. Мы учитываем эту экономию в цене, а не
+              умножаем часы разработки на ставку специалиста
             </p>
+            <div className="economics-principle">
+              <span>AI доступен всем</span>
+              <p>Разница в том, как его скорость отражается в вашем бюджете</p>
+            </div>
             <Link href="/#intake" className="text-link">
               Обсудить стоимость <Arrow diagonal />
             </Link>
           </div>
           <div className="price-ledger cost-comparison">
             <div className="ledger-heading">
-              <span>Одна задача. Другой бюджет.</span>
+              <span>Одна задача, две модели оплаты</span>
               <span aria-hidden="true">↘</span>
             </div>
             <CostChart />
             <div className="cost-included">
-              <h3>В проект входят</h3>
+              <h3>В обеих сметах одна задача</h3>
               <ul>
-                <li>Дизайн под вашу задачу</li>
-                <li>Согласованный функционал</li>
-                <li>Тестирование и запуск</li>
+                <li>Дизайн и функциональность</li>
+                <li>Проверка и запуск</li>
                 <li>Исходный код</li>
               </ul>
-            </div>
-            <div className="ledger-footer">
-              <span className="trace-mark" />
-              <p>
-                Стоимость работ согласуем до старта.
-                <br />
-                Расходы на AI показываем отдельно.
-              </p>
             </div>
           </div>
         </div>

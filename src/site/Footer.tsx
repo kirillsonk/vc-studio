@@ -10,9 +10,9 @@ export function Footer() {
             vc<span className="wordmark-slash">/</span>studio
           </Link>
           <p>
-            AI ускоряет код.
+            AI ускоряет код
             <br />
-            Мы отвечаем за продукт.
+            Мы отвечаем за продукт
           </p>
           <div className="footer-contacts">
             {STUDIO_EMAIL && (
@@ -32,7 +32,7 @@ export function Footer() {
         </div>
         <div className="footer-bottom">
           <span>© {new Date().getFullYear()} VC Studio</span>
-          <span>Дизайн с характером. Разработка с ответственностью.</span>
+          <span>Дизайн с характером. Разработка с ответственностью</span>
           <a href="#main">Наверх ↑</a>
         </div>
       </Container>

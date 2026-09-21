@@ -18,7 +18,7 @@ export function Cases() {
           </h2>
           <p>
             Попробуйте короткую браузерную игру. Такие механики помогают
-            вовлекать аудиторию в запуск продукта, акцию или спецпроект.
+            вовлекать аудиторию в запуск продукта, акцию или спецпроект
           </p>
         </div>
         <Playground />
@@ -72,7 +72,7 @@ export function Playground() {
           </div>
           <div className="game-poster-top">
             <span>VC / Playground</span>
-            <span>Одна кнопка. Тридцать секунд.</span>
+            <span>Одна кнопка. Тридцать секунд</span>
           </div>
           <button
             className="action action-light game-launch"

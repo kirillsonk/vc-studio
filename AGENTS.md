@@ -5,6 +5,7 @@ Read BRAND.md before writing product copy or changing the design.
 Permanent TOV rules requested by the owner:
 - Use Cyrillic е and Е instead of the letters with two dots (U+0451 / U+0401).
 - Do not use long dashes (U+2014 / U+2013) in copy. Rewrite the sentence with commas, colons or periods. Use ASCII hyphens only where appropriate.
+- No trailing periods in secondary website copy: descriptions, captions, lists, form hints and statuses. Keep punctuation between sentences. Prefer direct first-person verbs over impersonal team references.
 - Prefer AI over its Russian abbreviation. English industry abbreviations are welcome when useful: UX/UI, CMS, CRM, API, MVP, QA.
 - These rules apply to website copy, metadata, proposals, project documents and communication about this project.
 - Do not add decorative numbered section labels or empty slogans.

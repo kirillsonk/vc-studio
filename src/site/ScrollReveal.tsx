@@ -38,7 +38,7 @@ export function ScrollReveal() {
     );
     document
       .querySelectorAll(
-        ".section-heading, .vibe-definition, .approach-points article, .process-list li, .service-row, .cost-comparison, .agency-panel",
+        ".section-heading, .vibe-definition, .approach-points article, .process-list > li, .service-row, .cost-comparison, .agency-panel",
       )
       .forEach((element) => {
         if (element.getBoundingClientRect().top >= window.innerHeight)
