@@ -2434,3 +2434,13 @@ svg {
     margin-top: 0;
   }
 }
+
+@media (min-width: 651px) and (max-width: 1200px) {
+  .economics-layout {
+    grid-template-columns: 1fr;
+    gap: 40px;
+  }
+  .economics-copy .section-lead {
+    max-width: 640px;
+  }
+}
