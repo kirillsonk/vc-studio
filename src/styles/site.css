@@ -1963,35 +1963,6 @@ svg {
   }
 }
 
-/* The VC monogram becomes a quiet pair of rails. Native scrolling stays untouched. */
-.vc-art {
-  isolation: isolate;
-}
-.vc-static {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-}
-.vc-art[data-motion="active"] .vc-static {
-  visibility: hidden;
-}
-.vc-motion-overlay {
-  position: fixed;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 4;
-  pointer-events: none;
-  visibility: hidden;
-  contain: strict;
-}
-.vc-halo {
-  position: absolute;
-  inset: 16% 0 12%;
-  z-index: -1;
-  background: radial-gradient(ellipse at 60% 55%, #c943200d, transparent 64%);
-}
 .economics-principle {
   margin-top: 30px;
   padding-left: 18px;
@@ -2183,24 +2154,283 @@ svg {
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .vc-motion-overlay {
-    display: none;
+}
+
+/* The metal sculpture sits behind the page, never over its typography or controls. */
+#main,
+.vc-page,
+.site-footer {
+  position: relative;
+  z-index: 1;
+}
+.vc-art {
+  position: relative;
+}
+.vc-static {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.vc-art[data-motion="active"] .vc-static {
+  visibility: hidden;
+}
+.vc-motion-canvas {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.6s;
+}
+.vc-halo {
+  position: absolute;
+  inset: 15% 0 5%;
+  background: radial-gradient(ellipse at 55% 60%, #c943200b, transparent 65%);
+}
+.motion-toggle {
+  position: absolute;
+  bottom: 18px;
+  right: 8px;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-2);
+  cursor: pointer;
+  pointer-events: auto;
+  transition:
+    color 0.2s,
+    border-color 0.2s;
+}
+.motion-toggle:hover {
+  color: var(--brand);
+  border-color: var(--brand);
+}
+.motion-toggle:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 4px;
+}
+.cost-chart-hint {
+  color: var(--text-2);
+  font-size: 15px;
+  line-height: 1.5;
+  margin-bottom: 28px;
+}
+.cost-stacked-track {
+  display: flex;
+  height: 62px;
+  background: #deded333;
+}
+.cost-segment {
+  position: relative;
+  flex: 0 0 auto;
+  padding: 0;
+  border: 0;
+  border-right: 2px solid var(--surface-2);
+  background: var(--segment);
+  cursor: pointer;
+  transition:
+    transform 0.25s var(--ease),
+    filter 0.25s;
+  transform-origin: center;
+}
+.cost-segment[data-active="true"] {
+  transform: translateY(-5px);
+  filter: brightness(1.1);
+  box-shadow: 0 8px 14px #11121415;
+  z-index: 1;
+}
+.cost-design {
+  --segment: #697e92;
+}
+.cost-code {
+  --segment: #c94320;
+}
+.cost-support {
+  --segment: #7c8665;
+}
+.cost-legend {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+.cost-legend-item {
+  display: flex;
+  align-items: flex-start;
+  text-align: left;
+  gap: 8px;
+  min-height: 54px;
+  padding: 6px 0;
+  color: var(--text-2);
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1.4;
+  transition: color 0.2s;
+}
+.cost-legend-item strong {
+  display: block;
+  font-size: 16px;
+  color: var(--ink);
+  font-weight: 500;
+  margin-top: 4px;
+  white-space: nowrap;
+}
+.cost-dot {
+  flex: 0 0 8px;
+  height: 8px;
+  margin-top: 6px;
+  background: var(--segment);
+  border-radius: 2px;
+}
+.cost-legend-item[data-active="true"] {
+  color: var(--ink);
+}
+.cost-legend-item[data-active="true"] .cost-dot {
+  box-shadow:
+    0 0 0 3px var(--surface-2),
+    0 0 0 4px var(--segment);
+}
+.cost-legend-item:focus-visible,
+.cost-segment:focus-visible {
+  outline: 2px solid var(--segment);
+  outline-offset: 4px;
+}
+.cost-detail {
+  margin-top: 24px;
+  padding: 20px 0 20px 18px;
+  border-left: 3px solid var(--segment);
+  min-height: 164px;
+  transition: border-color 0.2s;
+}
+.cost-detail > div {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 16px;
+}
+.cost-detail strong {
+  font-weight: 500;
+  white-space: nowrap;
+}
+.cost-detail p {
+  font-size: 16px;
+  color: var(--text-2);
+  line-height: 1.6;
+  margin-top: 12px;
+}
+.cost-included h3 {
+  line-height: 1.4;
+}
+.cost-saving span {
+  font-size: 19px;
+}
+.process-icon {
+  overflow: visible;
+}
+.process-icon path {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+  .process-list > li:hover .process-accent {
+    transform: translateY(-3px);
   }
+  .process-accent {
+    transition: transform 0.4s var(--ease);
+  }
+  .agency-panel:hover .agency-mark {
+    transform: translate(0, -22px);
+  }
+  .agency-mark {
+    transition: transform 0.6s var(--ease);
+  }
+}
+@media (max-width: 650px) {
+  .motion-toggle {
+    bottom: 0;
+    right: 0;
+  }
+  .cost-legend {
+    gap: 10px;
+  }
+  .cost-legend-item {
+    flex-direction: column;
+    gap: 6px;
+  }
+  .cost-detail {
+    min-height: 215px;
+  }
+  .cost-stacked-track {
+    height: 56px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
   .vc-art[data-motion="active"] .vc-static {
     visibility: visible;
   }
+  .vc-motion-canvas {
+    display: none;
+  }
+  .cost-segment,
+  .cost-detail {
+    transition: none;
+  }
 }
 
-.vc-strand {
-  stroke-dasharray: 1;
-  stroke-dashoffset: 0;
-  animation: vc-draw 1.8s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+.cost-segment[data-muted="true"] {
+  opacity: 0.5;
 }
-@keyframes vc-draw {
-  from {
-    stroke-dashoffset: 1;
+.cost-segment {
+  transition:
+    transform 0.25s var(--ease),
+    filter 0.25s,
+    opacity 0.25s;
+}
+@media (prefers-reduced-motion: reduce) {
+  .cost-segment {
+    transition: none;
   }
-  to {
-    stroke-dashoffset: 0;
+}
+
+.cost-dot {
+  width: 8px;
+}
+@media (max-width: 650px) {
+  .cost-legend {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+  .cost-legend-item {
+    flex-direction: row;
+    align-items: center;
+    min-height: 44px;
+    gap: 10px;
+    border-bottom: 1px solid var(--line);
+    font-size: 15px;
+  }
+  .cost-legend-item > span:last-child {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    flex: 1;
+    gap: 12px;
+    min-width: 0;
+  }
+  .cost-legend-item strong {
+    margin: 0;
+  }
+  .cost-dot {
+    margin-top: 0;
   }
 }
