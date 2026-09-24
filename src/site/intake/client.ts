@@ -8,6 +8,14 @@ export const PRIVACY_URL = process.env.NEXT_PUBLIC_PRIVACY_URL || "";
 // Separate AI briefing from lead delivery. Enable only after delivery and policy are ready
 export const DELIVERY_ENABLED = process.env.NEXT_PUBLIC_INTAKE_DELIVERY_ENABLED === "true" && !INTAKE_MOCK;
 
+export async function deliveryAvailable() {
+  if (!DELIVERY_ENABLED) return false;
+  try {
+    const r = await fetch(`${INTAKE_API}/config`, { signal: AbortSignal.timeout(5000), cache: "no-store" });
+    return r.ok && (await r.json()).delivery === true;
+  } catch { return false; }
+}
+
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 async function post<T>(path: string, body: unknown, timeout: number): Promise<T> {

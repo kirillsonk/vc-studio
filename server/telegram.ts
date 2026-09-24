@@ -24,10 +24,10 @@ export async function discoverTelegram(env:Env,fetcher:typeof fetch) {
   if(!env.TELEGRAM_BOT_TOKEN) throw new Error('not_configured');
   const bot=await call(env.TELEGRAM_BOT_TOKEN,'getMe',{},fetcher) as {username:string};
   if(bot.username!=='sborka_applications_bot') throw new Error('unexpected_bot');
-  const updates=await call(env.TELEGRAM_BOT_TOKEN,'getUpdates',{limit:100,timeout:0},fetcher) as Array<{message?:{text?:string;chat:{id:number;type:string;title?:string}}}>;
+  const updates=await call(env.TELEGRAM_BOT_TOKEN,'getUpdates',{limit:100,timeout:0,allowed_updates:['message','my_chat_member']},fetcher) as Array<{message?:{text?:string;chat:{id:number;type:string;title?:string}};my_chat_member?:{chat:{id:number;type:string;title?:string}}}>;
   const chats=new Map<number,unknown>();
-  for(const u of updates){const m=u.message;if(m && ['group','supergroup'].includes(m.chat.type) && /^\/start(?:@sborka_applications_bot)?(?:\s|$)/i.test(m.text||'')) chats.set(m.chat.id,m.chat);}
-  return {bot:bot.username,chats:[...chats.values()]};
+  for(const u of updates){const chat=u.message?.chat || u.my_chat_member?.chat;if(chat && ['group','supergroup'].includes(chat.type)) chats.set(chat.id,{id:chat.id,type:chat.type,title:chat.title});}
+  return {bot:bot.username,chats:[...chats.values()],updates:updates.length};
 }
 export function leadMessages(lead:Lead) {
   const text=[`Новая заявка · ${lead.sessionId}`,lead.summary.title,'',...Object.entries(lead.contacts).map(([k,v])=>`${k}: ${v}`),'',...lead.summary.items.map(i=>`${i.label}: ${i.value}`),'','Исходная задача',lead.task,'',...lead.answers.flatMap(a=>[a.question,a.answer||'Вопрос пропущен','']),`Страница: ${lead.page}`,...Object.entries(lead.utm).map(([k,v])=>`${k}: ${v}`)].join('\n');

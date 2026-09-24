@@ -62,6 +62,7 @@ export async function handle(request: Request, env: Env, fetcher: typeof fetch =
   if (!url.pathname.startsWith("/api/intake/")) {
     return env.ASSETS ? env.ASSETS.fetch(request) : new Response("Not found", { status: 404 });
   }
+  if (url.pathname === "/api/intake/config" && request.method === "GET") return json({delivery:!!(env.TELEGRAM_BOT_TOKEN && env.TELEGRAM_CHAT_ID && env.DB)});
   if (url.pathname !== "/api/intake/next" && url.pathname !== "/api/intake/submit") return json({ error: "not_found" }, 404);
   if (request.method !== "POST") return json({ error: "method_not_allowed" }, 405, { Allow: "POST" });
   // JSON + same-origin checks block drive-by cross-site forms. They supplement rate limits

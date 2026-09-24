@@ -10,6 +10,6 @@ Permanent TOV rules requested by the owner:
 - These rules apply to website copy, metadata, proposals, project documents and communication about this project.
 - Do not add decorative numbered section labels or empty slogans.
 - No minimum project budget. Cost comparisons are illustrative unless supported by agreed estimates.
-- Keep the current demo until the owner chooses a replacement. AI intake uses OpenAI with a local fallback. Telegram and contact collection are deferred by the owner; read docs/intake-status.md before continuing. Do not change its contract without updating docs/intake-api.md.
+- Keep the current demo until the owner chooses a replacement. AI intake uses OpenAI with a local fallback. Telegram and free-text contact collection are now authorized; read docs/intake-status.md for delivery setup and the deferred operator policy. Do not change its contract without updating docs/intake-api.md.
 
 Run npm run check:copy, npm run typecheck and npm run build before pushing. Check responsive layout and changed interactions in the browser. Use ordinary git push; do not store credentials in source files or Git URLs.

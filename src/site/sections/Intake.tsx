@@ -5,7 +5,7 @@ import { Arrow } from "../Arrow";
 import { STUDIO_EMAIL, STUDIO_TELEGRAM } from "../constants";
 import { SERVICES, serviceFromQuery } from "../brief";
 import { LIMITS, MAX_QUESTIONS, type Answer, type Question, type Summary } from "../intake/contract";
-import { DELIVERY_ENABLED, INTAKE_MOCK, PRIVACY_URL, nextStep, submitBrief } from "../intake/client";
+import { deliveryAvailable, INTAKE_MOCK, PRIVACY_URL, nextStep, submitBrief } from "../intake/client";
 import { CONTACT_LABEL, collectContacts, splitContacts, extractContacts } from "../intake/contacts";
 import { ThinkingAtom } from "../intake/ThinkingAtom";
 
@@ -182,6 +182,8 @@ function SummaryCard({
 
 export function Intake() {
   const [s, setS] = React.useState<State>(initial);
+  const [deliveryEnabled, setDeliveryEnabled] = React.useState(false);
+  React.useEffect(() => { let active=true; deliveryAvailable().then(value => { if(active)setDeliveryEnabled(value); }); return () => {active=false;}; }, []);
   const [draft, setDraft] = React.useState("");
   const [thinking, setThinking] = React.useState<null | keyof typeof THINKING>(null);
   const [revealing, setRevealing] = React.useState(false);
@@ -274,7 +276,7 @@ export function Intake() {
       setS((st) => ({ ...st, entries: next(st.entries), question: { question: res.question, options: res.options } }));
     } else {
       added.push({ role: "studio", text: "", kind: "summary", animate: true });
-      added.push({ role: "studio", text: DELIVERY_ENABLED ? (extractContacts([base.task, ...base.answers.map(a => a.answer)].join("\n")).length ? "Контакт уже есть в переписке. Проверьте бриф и отправьте заявку" : CONTACT_QUESTION) : "Бриф готов, его можно изменить и скопировать", animate: true });
+      added.push({ role: "studio", text: deliveryEnabled ? (extractContacts([base.task, ...base.answers.map(a => a.answer)].join("\n")).length ? "Контакт уже есть в переписке. Проверьте бриф и отправьте заявку" : CONTACT_QUESTION) : "Бриф готов, его можно изменить и скопировать", animate: true });
       const next = push(added);
       setS((st) => ({ ...st, entries: next(st.entries), question: null, summary: res.summary, phase: "contact" }));
     }
@@ -306,7 +308,7 @@ export function Intake() {
   };
 
   const sendContact = async () => {
-    if (!DELIVERY_ENABLED || !s.summary || thinking || revealing) return;
+    if (!deliveryEnabled || !s.summary || thinking || revealing) return;
     const found = draft.trim() ? splitContacts(draft) : knownContacts;
     if (!found.length) {
       setHint("Не похоже на email, Telegram или телефон. Проверьте, пожалуйста");
@@ -497,7 +499,7 @@ export function Intake() {
                 </div>
               )}
 
-              {phase === "contact" && !DELIVERY_ENABLED ? (
+              {phase === "contact" && !deliveryEnabled ? (
                 <div className="ci-done">
                   <button type="button" className="ci-link" disabled={busy} onClick={async () => {
                     if (!s.summary) return;
@@ -571,13 +573,13 @@ export function Intake() {
                 </div>
               )}
               {phase === "compose" && <p className="ci-note">Можно сразу добавить контакт для связи. Заявку отправим после вашего подтверждения</p>}
-              {phase === "contact" && DELIVERY_ENABLED && knownContacts.length > 0 && <p className="ci-note">Для связи: {knownContacts.map(c => c.value).join(", ")}</p>}
-              {phase === "contact" && !DELIVERY_ENABLED && hint && <p className="ci-note" role="status">{hint}</p>}
-              {phase === "contact" && DELIVERY_ENABLED && (
+              {phase === "contact" && deliveryEnabled && knownContacts.length > 0 && <p className="ci-note">Для связи: {knownContacts.map(c => c.value).join(", ")}</p>}
+              {phase === "contact" && !deliveryEnabled && hint && <p className="ci-note" role="status">{hint}</p>}
+              {phase === "contact" && deliveryEnabled && (
                 <p className={`ci-note${hint ? " is-error" : ""}`} role={hint ? "alert" : undefined}>
                   {hint || (
                     <>
-                      Отправляя заявку, вы соглашаетесь на его обработку для ответа по заявке
+                      Отправляя заявку, вы соглашаетесь на обработку указанных данных для ответа по заявке
                       {PRIVACY_URL && (
                         <>
                           {". "}
