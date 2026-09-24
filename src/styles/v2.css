@@ -816,3 +816,9 @@
 .ci-bar-contact { flex-wrap: wrap; padding: 10px; }
 .ci-bar-contact .ci-input { flex-basis: 100%; }
 .ci-bar-contact button { display: flex; justify-content: center; gap: 12px; width: 100%; font: inherit; padding: 0 14px; }
+@media (max-width: 900px) {
+  .ci-window { height: auto; min-height: 600px; grid-template-rows: auto minmax(240px, 1fr) auto; }
+  .ci-log { height: 300px; }
+  .ci-chips, .ci-options { flex-wrap: wrap; overflow: visible; margin: 0; padding: 0; }
+  .ci-chips button, .ci-options button { flex-shrink: 1; white-space: normal; }
+}
