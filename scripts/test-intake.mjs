@@ -14,7 +14,10 @@ const { handle, consumeLimit } = await import(pathToFileURL(join(temp, "worker.j
 const req = { schemaVersion: 1, sessionId: "test-session-123456", service: null, task: "Нужен сайт", answers: [], forceSummary: false };
 const question = { type: "question", message: "Уточню детали", question: "Для кого делаем проект?", options: ["Для компании", "Для агентства"], summary: { title: "", items: [] }, internal: { clientType: "unknown", complexity: "unknown", notes: "private note" } };
 const summary = { ...question, type: "summary", question: "", options: [], summary: { title: "Сайт", items: [{ label: "Задача", value: "Нужен сайт" }] } };
-const upstream = value => async () => Response.json({ status: "completed", output: [{ type: "message", content: [{ type: "output_text", text: JSON.stringify(value) }] }] });
+const upstream = value => async () => {
+  const turn = value.type === "question" ? {type:value.type,message:value.message,question:value.question,options:value.options} : {type:value.type,message:value.message,summary:value.summary};
+  return Response.json({ status: "completed", output: [{ type: "message", content: [{ type: "output_text", text: JSON.stringify({turn,internal:value.internal}) }] }] });
+};
 function database() {
   const db = new DatabaseSync(":memory:");
   return readFile("drizzle/0000_productive_toxin.sql", "utf8").then(sql => {
@@ -56,7 +59,8 @@ await test("invalid JSON, refusals, incomplete and excess options fail closed", 
   await assert.rejects(() => generateNext({ ...req, answers: [{ question: question.question, answer: "" }] }, "test", upstream(question)));
 });
 await test("TOV normalization removes forbidden characters and trailing dots", () => {
-  assert.equal(cleanCopy("Вс\u0451 \u2014 готово."), "Все , готово");
+  assert.equal(cleanCopy("Вс\u0451 \u2014 готово."), "Все, готово");
+  assert.equal(cleanCopy("ИИ отвечает"), "AI отвечает");
 });
 await test("real SQL counter is atomic across parallel requests and expires", async () => {
   const { env, db } = await database();
