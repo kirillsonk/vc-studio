@@ -47,6 +47,7 @@ for (const file of [
   "docs/intake-flow.md",
   "docs/intake-api.md",
   "docs/astra-intake-prompt.md",
+  "docs/handoff-2026-09-24.md",
 ])
   await scan(file);
 if (violations.length) {
