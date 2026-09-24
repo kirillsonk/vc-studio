@@ -89,33 +89,41 @@ export function CostChart() {
   const topic = TOPICS.find((t) => t.id === active)!;
 
   const bar = (which: "regular" | "studio") => (
-    <div className={`econ-bar${which === "studio" ? " econ-bar-studio" : ""}`} aria-hidden="true">
+    <div className={`econ-bar${which === "studio" ? " econ-bar-studio" : ""}`} role="group" aria-label={which === "studio" ? "Расходы Сборки" : "Расходы обычной разработки"}>
       {ORDER.map((id) => {
         const t = TOPICS.find((x) => x.id === id)!;
         return (
-          <span
+          <button
+            type="button"
             key={id}
             className={`econ-seg econ-${id}`}
             data-active={active === id}
+            aria-label={`${which === "studio" ? t.studioName : t.regularName}: ${money(t[which])}`}
+            aria-pressed={active === id}
+            onPointerEnter={e => { if (e.pointerType === "mouse") setActive(id); }}
+            onFocus={() => setActive(id)}
+            onClick={() => setActive(id)}
             style={{ width: shown ? `${(t[which] / REGULAR) * 100}%` : "0%" }}
           />
         );
       })}
+      {which === "studio" && <span className="econ-unused" aria-hidden="true" />}
     </div>
   );
 
   return (
     <div className="econ-board" ref={root} data-shown={shown}>
-      <div className="econ-tabs" role="tablist" aria-label="Статья расходов">
+      <div className="econ-tabs" role="group" aria-label="Статья расходов">
         {TOPICS.map((t) => (
           <button
             key={t.id}
             type="button"
-            role="tab"
-            aria-selected={active === t.id}
+            aria-pressed={active === t.id}
             aria-controls="econ-note"
             className={`econ-tab econ-${t.id}`}
             onClick={() => setActive(t.id)}
+            onPointerEnter={e => { if (e.pointerType === "mouse") setActive(t.id); }}
+            onFocus={() => setActive(t.id)}
           >
             <span className="econ-dot" aria-hidden="true" />
             {t.label}
@@ -142,7 +150,7 @@ export function CostChart() {
         </div>
       </div>
 
-      <div id="econ-note" className="econ-note" role="tabpanel" aria-live="polite">
+      <div id="econ-note" className="econ-note">
         <div className="econ-compare" data-num>
           <span>{money(topic.regular)}</span>
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><path d="M4 12h15m-5-5 5 5-5 5" /></svg>

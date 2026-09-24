@@ -42,7 +42,7 @@ export function createBottleScene(host: HTMLElement, canvas: HTMLCanvasElement, 
     [0.6, 1.78], [0.52, 1.9], [0.45, 1.97], [0.43, 2.02],
   ].map(([x, y]) => new THREE.Vector2(x, y));
   const bodyMaterial = new THREE.MeshPhysicalMaterial({
-    color: initial.color, metalness: 0.15, roughness: 0.42, clearcoat: 0.6, clearcoatRoughness: 0.35,
+    color: initial.color, metalness: 0.22, roughness: 0.34, clearcoat: 0.4, clearcoatRoughness: 0.3,
   });
   const body = new THREE.Mesh(new THREE.LatheGeometry(profile, 96), bodyMaterial);
   product.add(body);
@@ -99,35 +99,53 @@ export function createBottleScene(host: HTMLElement, canvas: HTMLCanvasElement, 
   // Wordmark printed on the body, so the rotation reads at a glance
   const labelCanvas = document.createElement("canvas");
   labelCanvas.width = 1024;
-  labelCanvas.height = 256;
+  labelCanvas.height = 1024;
   const labelTexture = new THREE.CanvasTexture(labelCanvas);
   labelTexture.colorSpace = THREE.SRGBColorSpace;
-  labelTexture.anisotropy = 4;
-  const drawLabel = (bottle: string) => {
+  labelTexture.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+  const drawLabel = (options: BottleOptions) => {
     const c = labelCanvas.getContext("2d")!;
-    const tone = new THREE.Color(bottle);
-    const light = tone.r * 0.299 + tone.g * 0.587 + tone.b * 0.114 > 0.55;
+    const tone = new THREE.Color(options.color);
+    const light = tone.r * .299 + tone.g * .587 + tone.b * .114 > .42;
+    const ink = light ? "#202624" : "#f5f4f0";
+    const accent = options.color === "#c94320" ? "#f5d5a9" : "#e76c3e";
     const family = getComputedStyle(document.body).fontFamily || "sans-serif";
-    c.clearRect(0, 0, 1024, 256);
-    c.font = `500 150px ${family}`;
-    c.textBaseline = "alphabetic";
-    const word = "сборка";
-    const w = c.measureText(word).width;
-    const x = (1024 - w - 40) / 2;
-    c.fillStyle = light ? "#111214" : "#F5F4F0";
-    c.fillText(word, x, 170);
-    c.fillStyle = bottle.toLowerCase() === "#c94320" ? "#F5F4F0" : "#C94320";
-    c.fillRect(x + w + 12, 138, 30, 30);
+    c.clearRect(0, 0, 1024, 1024);
+    c.fillStyle = ink;
+    c.font = `500 184px ${family}`;
+    c.textAlign = "center";
+    c.fillText("сборка", 485, 258);
+    c.fillStyle = accent;
+    c.fillRect(865, 223, 30, 30);
+    c.lineWidth = 13;
+    // A pair of flowing ribbons wraps the printed surface
+    for(let i=0;i<5;i++) {
+      c.strokeStyle = i % 2 ? ink : accent;
+      c.globalAlpha = i % 2 ? .35 : .9;
+      c.beginPath(); c.moveTo(64, 385+i*38);
+      c.bezierCurveTo(340, 650+i*22, 640, 240+i*28, 960, 515+i*28); c.stroke();
+    }
+    c.globalAlpha=1; c.fillStyle=ink;
+    c.font = `500 156px ${family}`;
+    c.fillText(options.size, 430, 816);
+    c.font = `400 53px ${family}`;c.fillText("мл", 651, 810);
+    c.fillStyle=accent;c.fillRect(310,863,390,4);
+    c.fillStyle=ink;c.font = `400 35px ${family}`;
+    c.fillText("НА КАЖДЫЙ ДЕНЬ", 510, 937);
     labelTexture.needsUpdate = true;
   };
-  drawLabel(initial.color);
-  document.fonts?.ready.then(() => { if (!stopped) { drawLabel(target.color); render(); } });
-  const labelArc = 1.7;
+  drawLabel(initial);
+  document.fonts?.ready.then(() => { if (!stopped) { drawLabel(target); render(); } });
+  const labelArc = 2.2;
   const label = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.631, 0.631, 0.42, 64, 1, true, -labelArc / 2, labelArc),
-    new THREE.MeshStandardMaterial({ map: labelTexture, transparent: true, roughness: 0.55, metalness: 0, depthWrite: false }),
+    new THREE.CylinderGeometry(0.632, 0.632, 1.18, 96, 1, true, -labelArc / 2, labelArc),
+    new THREE.MeshStandardMaterial({ map: labelTexture, transparent: true, roughness: .65, metalness: 0, depthWrite: false }),
   );
   product.add(label);
+  const baseRing = new THREE.Mesh(new THREE.TorusGeometry(.605, .012, 12, 96), steel);
+  baseRing.rotation.x = Math.PI / 2; baseRing.position.y = .11; product.add(baseRing);
+  const capRim = new THREE.Mesh(new THREE.TorusGeometry(.459, .009, 12, 96), steel);
+  capRim.rotation.x = Math.PI / 2; capRim.position.y = .075; capHolder.add(capRim);
 
   let target = { ...initial };
   const targetColor = new THREE.Color(initial.color);
@@ -135,7 +153,8 @@ export function createBottleScene(host: HTMLElement, canvas: HTMLCanvasElement, 
   let capBlend = initial.cap === "sport" ? 1 : 0;
 
   // Drag to turn; idle spin resumes a moment after release
-  let angle = -0.5, velocity = 0, dragging = false, lastX = 0, idleAt = 0;
+  const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  let angle = -.12, velocity = 0, dragging = false, lastX = 0, idleAt = 0;
   const down = (e: PointerEvent) => { dragging = true; lastX = e.clientX; canvas.setPointerCapture(e.pointerId); };
   const move = (e: PointerEvent) => {
     if (!dragging) return;
@@ -169,7 +188,10 @@ export function createBottleScene(host: HTMLElement, canvas: HTMLCanvasElement, 
     if (!dragging) {
       velocity *= 0.92;
       angle += velocity;
-      if (now > idleAt) angle += dt * 0.35;
+      if (now > idleAt) {
+        const rest = reduced ? -.12 : -.12 + Math.sin(now * .00035) * .2;
+        angle += (rest - angle) * Math.min(1, dt * .8);
+      }
     }
     product.rotation.y = angle;
     bodyMaterial.color.lerp(targetColor, 1 - Math.pow(0.001, dt));
@@ -178,6 +200,7 @@ export function createBottleScene(host: HTMLElement, canvas: HTMLCanvasElement, 
     body.scale.y = heightScale;
     band.position.y = 2.05 * heightScale;
     label.position.y = 0.95 * heightScale;
+    label.scale.y = heightScale;
     capHolder.position.y = 2.08 * heightScale;
     const wantCap = target.cap === "sport" ? 1 : 0;
     capBlend += (wantCap - capBlend) * (1 - Math.pow(0.001, dt));
@@ -201,7 +224,7 @@ export function createBottleScene(host: HTMLElement, canvas: HTMLCanvasElement, 
 
   return {
     update(next: BottleOptions) {
-      if (next.color !== target.color) drawLabel(next.color);
+      if (next.color !== target.color || next.size !== target.size) drawLabel(next);
       target = { ...next };
       targetColor.set(next.color);
       start();

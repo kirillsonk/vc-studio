@@ -1,5 +1,5 @@
 import { build } from "esbuild";
-import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { mkdtemp, readFile, readdir, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -8,7 +8,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 const temp = await mkdtemp(join(tmpdir(), "sborka-test-"));
-await build({ entryPoints: ["server/intake.ts", "server/worker.ts"], outdir: temp, bundle: true, format: "esm", platform: "node" });
+await build({ entryPoints: ["server/intake.ts", "server/worker.ts", "server/telegram.ts", "src/site/intake/contacts.ts"], outdir: temp, entryNames:"[name]", bundle: true, format: "esm", platform: "node" });
 const { nextRequestSchema, generateNext, cleanCopy } = await import(pathToFileURL(join(temp, "intake.js")));
 const { handle, consumeLimit } = await import(pathToFileURL(join(temp, "worker.js")));
 const req = { schemaVersion: 1, sessionId: "test-session-123456", service: null, task: "Нужен сайт", answers: [], forceSummary: false };
@@ -18,12 +18,11 @@ const upstream = value => async () => {
   const turn = value.type === "question" ? {type:value.type,message:value.message,question:value.question,options:value.options} : {type:value.type,message:value.message,summary:value.summary};
   return Response.json({ status: "completed", output: [{ type: "message", content: [{ type: "output_text", text: JSON.stringify({turn,internal:value.internal}) }] }] });
 };
-function database() {
+async function database() {
   const db = new DatabaseSync(":memory:");
-  return readFile("drizzle/0000_productive_toxin.sql", "utf8").then(sql => {
-    db.exec(sql);
-    return { db, env: { CHATGPT_PLATFORM_API_KEY: "unit-test-only", DB: { prepare(sql) { return { bind(...args) { return { first: async () => db.prepare(sql).get(...args) ?? null, run: async () => db.prepare(sql).run(...args) }; } }; } } } };
-  });
+  for (const f of (await readdir("drizzle")).filter(x=>x.endsWith('.sql')).sort()) db.exec(await readFile(`drizzle/${f}`,"utf8"));
+  return { db, env: { CHATGPT_PLATFORM_API_KEY: "unit-test-only", DB: { prepare(sql) { return { bind(...args) { return { first: async () => db.prepare(sql).get(...args) ?? null, run: async () => db.prepare(sql).run(...args) }; } }; } } } };
+
 }
 const request = (body = req, overrides = {}) => new Request("https://site.example/api/intake/next", {
   method: "POST", headers: { Origin: "https://site.example", "Content-Type": "application/json", "CF-Connecting-IP": "192.0.2.1" }, body: JSON.stringify(body), ...overrides,
@@ -99,5 +98,38 @@ await test("HTTP limits requests before OpenAI and stores no raw IP or task", as
   assert.equal(rows.includes("192.0.2.1"), false);
   assert.equal(rows.includes(req.task), false);
   db.close();
+});
+const {deliverLead,submitSchema,leadMessages}=await import(pathToFileURL(join(temp,"telegram.js")));
+const {extractContacts}=await import(pathToFileURL(join(temp,"contacts.js")));
+const lead={schemaVersion:1,sessionId:"lead-test-session-123",service:null,task:"Нужен сайт",answers:[],summary:{title:"Сайт",items:[{label:"Задача",value:"Нужен сайт"}]},contacts:{email:"test@example.com"},consent:true,page:"https://site.example/",utm:{}};
+await test("free text extracts explicit contacts without treating ordinary English as Telegram",()=>{
+  assert.deepEqual(extractContacts("Website for product launch"),[]);
+  const cs=extractContacts("Нужен сайт, почта test@example.com, пишите @sample_user или +7 (999) 123-45-67");
+  assert.deepEqual(cs.map(c=>c.kind).sort(),["email","phone","telegram"]);
+  assert.equal(cs.find(c=>c.kind==='telegram').value,'@sample_user');
+  assert.equal(submitSchema.safeParse({...lead,consent:false}).success,false);
+});
+await test("confirmed delivery is idempotent under concurrent and repeated submissions",async()=>{
+  const {env,db}=await database();Object.assign(env,{TELEGRAM_BOT_TOKEN:'test-token',TELEGRAM_CHAT_ID:'-123'});
+  let sent=0;
+  const fetcher=async(url,opts)=>{sent++;const b=JSON.parse(opts.body);assert.equal(b.chat_id,'-123');assert.equal(b.parse_mode,undefined);return Response.json({ok:true,result:{message_id:sent}});};
+  await Promise.all([deliverLead(lead,env,fetcher),deliverLead(lead,env,fetcher)]);
+  assert.equal((await deliverLead(lead,env,fetcher)).ok,true);assert.equal(sent,1);
+  assert.equal((await deliverLead({...lead,task:'Другая задача'},env,fetcher)).error,'submission_conflict');
+  db.close();
+});
+await test("failed delivery resumes confirmed chunks; ambiguous network failure is not resent",async()=>{
+  const {env,db}=await database();Object.assign(env,{TELEGRAM_BOT_TOKEN:'test-token',TELEGRAM_CHAT_ID:'-123'});
+  const long={...lead,task:'x'.repeat(4000)};assert.ok(leadMessages(long).every(s=>s.length<=4096));
+  let sent=0;const fetcher=async()=>{sent++;return Response.json(sent===2?{ok:false}:{ok:true,result:{message_id:sent}},{status:sent===2?403:200});};
+  assert.equal((await deliverLead(long,env,fetcher)).error,'delivery_failed');
+  assert.equal((await deliverLead(long,env,fetcher)).ok,true);assert.equal(sent,3);
+  const other={...lead,sessionId:'lead-uncertain-test'};
+  assert.equal((await deliverLead(other,env,async()=>{throw Error('network');})).error,'delivery_uncertain');
+  assert.equal((await deliverLead(other,env,()=>{throw Error('must not resend');})).error,'delivery_uncertain');
+  db.close();
+});
+await test("Telegram discovery requires a separate server admin secret",async()=>{
+  const r=await handle(new Request('https://site.example/api/admin/telegram',{method:'POST'}),{INTAKE_ADMIN_SECRET:'secret'},()=>{throw Error('no access');});assert.equal(r.status,404);
 });
 await rm(temp, { recursive: true, force: true });

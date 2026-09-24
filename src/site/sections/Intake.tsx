@@ -6,7 +6,7 @@ import { STUDIO_EMAIL, STUDIO_TELEGRAM } from "../constants";
 import { SERVICES, serviceFromQuery } from "../brief";
 import { LIMITS, MAX_QUESTIONS, type Answer, type Question, type Summary } from "../intake/contract";
 import { DELIVERY_ENABLED, INTAKE_MOCK, PRIVACY_URL, nextStep, submitBrief } from "../intake/client";
-import { CONTACT_LABEL, collectContacts, splitContacts } from "../intake/contacts";
+import { CONTACT_LABEL, collectContacts, splitContacts, extractContacts } from "../intake/contacts";
 import { ThinkingAtom } from "../intake/ThinkingAtom";
 
 const STORAGE_KEY = "sborka-intake-v3";
@@ -190,6 +190,7 @@ export function Intake() {
   const [ready, setReady] = React.useState(false);
   const input = React.useRef<HTMLTextAreaElement>(null);
   const log = React.useRef<HTMLOListElement>(null);
+  const knownContacts = extractContacts([s.task, ...s.answers.map(a => a.answer)].join("\n"));
   const placeholder = useTypingPlaceholder(s.phase === "compose" && !focused && !draft);
 
   // Restore the dialog of this tab and react to service links and CTA clicks
@@ -225,6 +226,17 @@ export function Intake() {
       sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ ...s, entries: s.entries.map(({ animate, ...e }) => e) }));
     } catch {}
   }, [s, ready]);
+
+  React.useEffect(() => {
+    const el=input.current;
+    if (!el) return;
+    let width=el.clientWidth;
+    const observer=new ResizeObserver(() => {
+      if(el.clientWidth!==width){width=el.clientWidth;autosize(el);}
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [s.phase]);
 
   // The chat scrolls inside its own window, the page stays put
   React.useEffect(() => {
@@ -262,7 +274,7 @@ export function Intake() {
       setS((st) => ({ ...st, entries: next(st.entries), question: { question: res.question, options: res.options } }));
     } else {
       added.push({ role: "studio", text: "", kind: "summary", animate: true });
-      added.push({ role: "studio", text: DELIVERY_ENABLED ? CONTACT_QUESTION : "Бриф готов, его можно изменить и скопировать. Прием заявок пока не подключен", animate: true });
+      added.push({ role: "studio", text: DELIVERY_ENABLED ? (extractContacts([base.task, ...base.answers.map(a => a.answer)].join("\n")).length ? "Контакт уже есть в переписке. Проверьте бриф и отправьте заявку" : CONTACT_QUESTION) : "Бриф готов, его можно изменить и скопировать", animate: true });
       const next = push(added);
       setS((st) => ({ ...st, entries: next(st.entries), question: null, summary: res.summary, phase: "contact" }));
     }
@@ -295,12 +307,12 @@ export function Intake() {
 
   const sendContact = async () => {
     if (!DELIVERY_ENABLED || !s.summary || thinking || revealing) return;
-    const found = splitContacts(draft);
+    const found = draft.trim() ? splitContacts(draft) : knownContacts;
     if (!found.length) {
       setHint("Не похоже на email, Telegram или телефон. Проверьте, пожалуйста");
       return;
     }
-    const text = draft.trim().slice(0, LIMITS.contact);
+    const text = (draft.trim() || found.map(c => c.value).join(", ")).slice(0, LIMITS.contact);
     setHint("");
     setDraft("");
     setS((st) => ({ ...st, entries: [...st.entries.map(({ animate, ...e }) => e), { role: "client", text }] }));
@@ -332,7 +344,7 @@ export function Intake() {
       setS((st) => ({ ...st, entries: next(st.entries), phase: "sent" }));
     } else {
       const next = push([
-        { role: "studio", text: "Не получилось отправить. Попробуйте еще раз через минуту, бриф сохранен", animate: true },
+        { role: "studio", text: res.error === "delivery_uncertain" ? "Заявка сохранена, но подтверждение доставки задержалось. Не отправляйте ее повторно, проверим доставку" : "Не получилось отправить. Попробуйте еще раз через минуту, бриф сохранен", animate: true },
       ]);
       setS((st) => ({ ...st, entries: next(st.entries) }));
       setDraft(text);
@@ -405,7 +417,7 @@ export function Intake() {
               <br />
               что хотите сделать
             </h2>
-            <p>{DELIVERY_ENABLED ? "Пара слов о задаче. AI задаст несколько уточнений и соберет бриф, а мы вернемся с оценкой" : "Пара слов о задаче. AI задаст несколько уточнений и соберет бриф. Пока тестируем чат, без отправки заявки"}</p>
+            <p>Расскажите о проекте своими словами. Ассистент уточнит детали и соберет бриф, а мы оценим задачу</p>
             <div className="intake-contact">
               {STUDIO_TELEGRAM && (
                 <a className="text-link" href={`https://t.me/${STUDIO_TELEGRAM.replace("@", "")}`} target="_blank" rel="noreferrer">
@@ -497,7 +509,12 @@ export function Intake() {
                   <button type="button" className="ci-link" onClick={restart} disabled={busy}>Новый проект</button>
                 </div>
               ) : phase !== "sent" ? (
-                <form className={`ci-bar${busy ? " is-busy" : ""}`} onSubmit={submit}>
+                <form className={`ci-bar${busy ? " is-busy" : ""}${phase === "contact" ? " ci-bar-contact" : ""}`} onSubmit={submit}>
+                  <div className="ci-input">
+                  {phase === "compose" && !draft && <>
+                    <span className="ci-example ci-example-measure" aria-hidden="true">{EXAMPLES[1]}</span>
+                    <span className="ci-example" aria-hidden="true">{focused ? "Опишите задачу своими словами" : placeholder}</span>
+                  </>}
                   <textarea
                     ref={input}
                     rows={1}
@@ -505,7 +522,7 @@ export function Intake() {
                     maxLength={phase === "compose" ? LIMITS.task : phase === "contact" ? LIMITS.contact : LIMITS.answer}
                     aria-label={phase === "compose" ? "Опишите задачу" : phase === "contact" ? "Email, Telegram или телефон" : "Свой ответ"}
                     placeholder={
-                      phase === "compose" ? placeholder : phase === "contact" ? "Email, @telegram или телефон" : "Или напишите свой ответ"
+                      phase === "compose" ? "" : phase === "contact" ? (knownContacts.length ? "Или укажите другой контакт" : "Email, @telegram или телефон") : "Или напишите свой ответ"
                     }
                     autoComplete={phase === "contact" ? "email" : "off"}
                     disabled={phase !== "compose" && busy}
@@ -523,10 +540,12 @@ export function Intake() {
                       }
                     }}
                   />
+                  </div>
                   {detected.length > 0 && (
                     <span className="ci-kind">{detected.map((c) => CONTACT_LABEL[c.kind]).join(" и ")}</span>
                   )}
-                  <button type="submit" disabled={!draft.trim() || busy} aria-label="Отправить">
+                  <button type="submit" disabled={(!draft.trim() && !(phase === "contact" && knownContacts.length)) || busy} aria-label={phase === "contact" ? "Отправить заявку" : "Отправить"}>
+                    {phase === "contact" && <span>Отправить заявку</span>}
                     <SendIcon />
                   </button>
                 </form>
@@ -551,13 +570,14 @@ export function Intake() {
                   )}
                 </div>
               )}
-              {phase === "compose" && !DELIVERY_ENABLED && <p className="ci-note">Не указывайте контакты и личные данные в описании задачи</p>}
+              {phase === "compose" && <p className="ci-note">Можно сразу добавить контакт для связи. Заявку отправим после вашего подтверждения</p>}
+              {phase === "contact" && DELIVERY_ENABLED && knownContacts.length > 0 && <p className="ci-note">Для связи: {knownContacts.map(c => c.value).join(", ")}</p>}
               {phase === "contact" && !DELIVERY_ENABLED && hint && <p className="ci-note" role="status">{hint}</p>}
               {phase === "contact" && DELIVERY_ENABLED && (
                 <p className={`ci-note${hint ? " is-error" : ""}`} role={hint ? "alert" : undefined}>
                   {hint || (
                     <>
-                      Отправляя контакт, вы соглашаетесь на его обработку для ответа по заявке
+                      Отправляя заявку, вы соглашаетесь на его обработку для ответа по заявке
                       {PRIVACY_URL && (
                         <>
                           {". "}

@@ -777,3 +777,42 @@
   .ci-msg, .ci-options button, .ci-card, .ci-kind, .ci-thinking, .thinking-atom, .thinking-trail, .thinking-core { animation: none; }
   .ci-shimmer { animation: none; color: var(--text-2); background: none; }
 }
+
+/* A multiline example reserves its full height while it types */
+.ci-input { display: grid; flex: 1; min-width: 0; }
+.ci-input textarea, .ci-example { grid-area: 1 / 1; width: 100%; min-width: 0; overflow-wrap: anywhere; }
+.ci-example { padding: 10px 0; font-size: 17px; line-height: 1.4; color: var(--text-3); pointer-events: none; }
+.ci-example-measure { visibility: hidden; }
+.ci-bar .ci-kind { display: none; }
+.ci-head > .ci-link { white-space: normal; max-width: 95px; text-align: right; }
+.ci-msg, .ci-card dd, .ci-note { overflow-wrap: anywhere; }
+.ci-chips button, .ci-options button { min-width: 0; max-width: 100%; text-align: left; overflow-wrap: anywhere; }
+.econ-tab[aria-pressed="true"] { background: var(--surface); color: var(--text); box-shadow: 0 1px 2px #11121414, 0 4px 14px -6px #1112142e; }
+.econ-bar { gap: 0; }
+.econ-bar-studio { background: none; }
+.econ-seg { flex-shrink: 0; padding: 0; border: 0; border-right: 3px solid var(--surface); cursor: pointer; position: relative; transition: width 1s var(--ease), background-color .25s ease, box-shadow .25s ease; }
+.econ-seg[data-active="true"] { box-shadow: inset 0 -5px 0 #11121415; }
+.econ-seg:focus-visible { outline: 2px solid var(--ink); outline-offset: -4px; }
+.econ-unused { flex: 1; background: repeating-linear-gradient(0deg, var(--line-strong) 0 1px, transparent 1px 7px); opacity: .65; }
+.econ-note { grid-template-columns: max-content minmax(0,1fr); column-gap: 32px; }
+.econ-tabs { flex-wrap: wrap; }
+@media (max-width: 1100px) { .econ-note { grid-template-columns: 1fr; gap: 12px; } }
+@media (max-width: 600px) {
+  .ci-example { font-size: 16px; }
+  .ci-head { gap: 10px; padding: 14px; }
+  .ci-head-title strong { font-size: 16px; }
+  .ci-head-title span { font-size: 13px; }
+  .ci-window { height: auto; min-height: 580px; grid-template-rows: auto minmax(230px, 1fr) auto; }
+  .ci-log { height: 290px; }
+  .ci-foot { padding: 14px; }
+  .ci-chips { gap: 6px; }
+  .ci-chips button { font-size: 14px; padding: 8px 10px; }
+  .econ-tabs { overflow: visible; }
+  .econ-tab { padding: 10px; font-size: 14px; }
+  .econ-total { font-size: 24px; }
+  .econ-compare { flex-wrap: wrap; white-space: normal; }
+}
+@media (prefers-reduced-motion: reduce) { .econ-seg { transition: none; } }
+.ci-bar-contact { flex-wrap: wrap; padding: 10px; }
+.ci-bar-contact .ci-input { flex-basis: 100%; }
+.ci-bar-contact button { display: flex; justify-content: center; gap: 12px; width: 100%; font: inherit; padding: 0 14px; }

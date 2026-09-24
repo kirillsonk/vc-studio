@@ -33,14 +33,21 @@ export function collectContacts(values: string[]): Contacts {
 
 /** One line may hold several contacts: "@name, name@mail.ru" or "почта ... или телефон ..." */
 export function splitContacts(raw: string): Array<{ kind: ContactKind; value: string }> {
+  const explicit = extractContacts(raw);
+  if (explicit.length) return explicit;
+  const single = detectContact(raw);
+  return single ? [single] : [];
+}
+
+/** Extract only explicit contacts from prose; ordinary English words are not usernames */
+export function extractContacts(raw: string): Array<{ kind: ContactKind; value: string }> {
   const out: Array<{ kind: ContactKind; value: string }> = [];
-  const parts = raw.split(/[,;\n]|\s+(?:или|и|or)\s+/i);
-  for (const part of parts) {
-    const bare = part.trim().replace(/^[а-я\u0451\s:-]+(?=[@+\d(a-z])/i, "");
-    const words = bare.split(/\s+/);
-    // Labels like "телеграм @name" or "почта name@mail.ru": try the whole part, then each word
-    const hit = detectContact(bare) ?? words.map(detectContact).find(Boolean) ?? null;
-    if (hit && !out.some((c) => c.kind === hit.kind)) out.push(hit);
+  const email = /[a-z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-z0-9-]+(?:\.[a-z0-9-]+)+/gi;
+  const withoutEmail = raw.replace(email, value => {const c=detectContact(value);if(c)out.push(c);return ' ';});
+  const matches = withoutEmail.match(/(?:https?:\/\/)?(?:t\.me|telegram\.me)\/[a-zA-Z][a-zA-Z0-9_]{4,31}|(?<![\w@])@[a-zA-Z][a-zA-Z0-9_]{4,31}\b|(?<!\d)(?:\+?\d[\s().-]*){10,15}(?!\d)/g) || [];
+  for (const value of matches) {
+    const hit=detectContact(value.trim());
+    if(hit)out.push(hit);
   }
-  return out;
+  return out.filter((c,i)=>out.findIndex(x=>x.kind===c.kind && x.value===c.value)===i);
 }

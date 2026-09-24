@@ -1,4 +1,5 @@
 import { generateNext, ModelError, nextRequestSchema } from "./intake";
+import { deliverLead, discoverTelegram, submitSchema } from "./telegram";
 
 interface Statement {
   bind(...values: (string | number)[]): Statement;
@@ -7,6 +8,9 @@ interface Statement {
 }
 export interface Env {
   CHATGPT_PLATFORM_API_KEY?: string;
+  TELEGRAM_BOT_TOKEN?: string;
+  TELEGRAM_CHAT_ID?: string;
+  INTAKE_ADMIN_SECRET?: string;
   DB?: { prepare(sql: string): Statement };
   ASSETS?: { fetch(request: Request): Promise<Response> };
 }
@@ -39,7 +43,7 @@ async function readBody(request: Request) {
     const { done, value } = await reader.read();
     if (done) break;
     size += value.byteLength;
-    if (size > 24000) { await reader.cancel(); throw new Error("body_too_large"); }
+    if (size > 48000) { await reader.cancel(); throw new Error("body_too_large"); }
     chunks.push(value);
   }
   const bytes = new Uint8Array(size);
@@ -50,6 +54,11 @@ async function readBody(request: Request) {
 
 export async function handle(request: Request, env: Env, fetcher: typeof fetch = fetch): Promise<Response> {
   const url = new URL(request.url);
+  if (url.pathname === "/api/admin/telegram") {
+    if (!env.INTAKE_ADMIN_SECRET || request.headers.get("Authorization") !== `Bearer ${env.INTAKE_ADMIN_SECRET}`) return json({error:"not_found"},404);
+    if (request.method !== "POST") return json({error:"method_not_allowed"},405);
+    try { return json(await discoverTelegram(env,fetcher)); } catch { return json({error:"telegram_setup_failed"},502); }
+  }
   if (!url.pathname.startsWith("/api/intake/")) {
     return env.ASSETS ? env.ASSETS.fetch(request) : new Response("Not found", { status: 404 });
   }
@@ -59,8 +68,18 @@ export async function handle(request: Request, env: Env, fetcher: typeof fetch =
   const origin = request.headers.get("Origin");
   if (!origin || origin !== url.origin || request.headers.get("Sec-Fetch-Site") === "cross-site") return json({ error: "origin" }, 403);
   if (request.headers.get("Content-Type")?.split(";")[0].trim() !== "application/json") return json({ error: "content_type" }, 415);
-  // Telegram and the operator policy are a separate owner-approved next step
-  if (url.pathname.endsWith("/submit")) return json({ ok: false, error: "delivery_not_configured" }, 503);
+  if (url.pathname.endsWith("/submit")) {
+    if (!env.TELEGRAM_BOT_TOKEN || !env.TELEGRAM_CHAT_ID) return json({ok:false,error:"delivery_not_configured"},503);
+    let lead;
+    try { lead = submitSchema.parse(await readBody(request)); } catch { return json({ok:false,error:"invalid_request"},400); }
+    try {
+      const id = await fingerprint(request.headers.get("CF-Connecting-IP") || "unknown", env.TELEGRAM_BOT_TOKEN);
+      const rate = await consumeLimit(env,`submit:${id}`,5,3600);
+      if (!rate.allowed) return json({ok:false,error:"rate_limit"},429,{"Retry-After":String(rate.retry)});
+      const result = await deliverLead(lead,env,fetcher);
+      return json(result,result.ok?200:503);
+    } catch { return json({ok:false,error:"temporarily_unavailable"},503); }
+  }
   let input;
   try { input = nextRequestSchema.parse(await readBody(request)); }
   catch { return json({ error: "invalid_request" }, 400); }

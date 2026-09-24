@@ -6,7 +6,7 @@ export const INTAKE_API = (process.env.NEXT_PUBLIC_INTAKE_API_URL || "").replace
 export const INTAKE_MOCK = !INTAKE_API;
 export const PRIVACY_URL = process.env.NEXT_PUBLIC_PRIVACY_URL || "";
 // Separate AI briefing from lead delivery. Enable only after delivery and policy are ready
-export const DELIVERY_ENABLED = process.env.NEXT_PUBLIC_INTAKE_DELIVERY_ENABLED === "true" && !!PRIVACY_URL && !INTAKE_MOCK;
+export const DELIVERY_ENABLED = process.env.NEXT_PUBLIC_INTAKE_DELIVERY_ENABLED === "true" && !INTAKE_MOCK;
 
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -20,7 +20,7 @@ async function post<T>(path: string, body: unknown, timeout: number): Promise<T>
       body: JSON.stringify(body),
       signal: ctrl.signal,
     });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    if (!res.ok && path !== "/submit") throw new Error(`HTTP ${res.status}`);
     return (await res.json()) as T;
   } finally {
     clearTimeout(timer);
@@ -58,7 +58,7 @@ export async function nextStep(req: NextRequest): Promise<NextResponse> {
 export async function submitBrief(req: SubmitRequest): Promise<SubmitResponse> {
   if (!DELIVERY_ENABLED) return { ok: false, error: "delivery_not_configured" };
   try {
-    return await post<SubmitResponse>("/submit", req, 15000);
+    return await post<SubmitResponse>("/submit", req, 45000);
   } catch {
     return { ok: false, error: "network" };
   }
