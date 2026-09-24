@@ -40,6 +40,7 @@ async function walk(dir) {
   }
 }
 await walk("src");
+await walk("server");
 for (const file of [
   "BRAND.md",
   "README.md",
@@ -47,7 +48,7 @@ for (const file of [
   "docs/intake-flow.md",
   "docs/intake-api.md",
   "docs/astra-intake-prompt.md",
-  "docs/handoff-2026-09-24.md",
+  "docs/intake-status.md",
 ])
   await scan(file);
 if (violations.length) {

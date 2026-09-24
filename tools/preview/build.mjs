@@ -15,7 +15,7 @@ const result = await esbuild.build({
   target: 'es2020',
   jsx: 'automatic',
   write: false,
-  define: { 'process.env.NODE_ENV': '"production"', 'process.env.NEXT_PUBLIC_STUDIO_EMAIL': '""', 'process.env.NEXT_PUBLIC_STUDIO_TELEGRAM': '""', 'process.env.NEXT_PUBLIC_INTAKE_API_URL': '""', 'process.env.NEXT_PUBLIC_PRIVACY_URL': '""' },
+  define: { 'process.env.NODE_ENV': '"production"', 'process.env.NEXT_PUBLIC_STUDIO_EMAIL': '""', 'process.env.NEXT_PUBLIC_STUDIO_TELEGRAM': '""', 'process.env.NEXT_PUBLIC_INTAKE_API_URL': '""', 'process.env.NEXT_PUBLIC_PRIVACY_URL': '""', 'process.env.NEXT_PUBLIC_INTAKE_DELIVERY_ENABLED': '"false"' },
   alias: {
     'next/link': resolve(root, 'tools/preview/shims/link.tsx'),
     'next/navigation': resolve(root, 'tools/preview/shims/router.ts'),
@@ -47,7 +47,7 @@ const fontCss = faces.replace(/url\(\/_next\/static\/media\/([^)]+)\)/g, (_, fil
 
 // The Artifact host wraps the file in its own doctype/head/body, so emit page
 // content only: title, styles, mount point, bundle.
-const html = `<title>VC Studio</title>
+const html = `<title>Сборка</title>
 <style>
 ${fontCss}
 :root{--font-onest:"Onest"}

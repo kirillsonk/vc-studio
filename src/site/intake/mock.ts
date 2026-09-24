@@ -1,5 +1,5 @@
 import { SERVICES } from "../brief";
-import { MAX_QUESTIONS, type Answer, type NextRequest, type NextResponse, type Question, type Summary } from "./contract";
+import { LIMITS, MAX_QUESTIONS, type Answer, type NextRequest, type NextResponse, type Question, type Summary } from "./contract";
 
 /**
  * Local stand-in for the model. Reads keywords, asks only about what is missing
@@ -134,7 +134,7 @@ export function mockSummary(req: NextRequest): Summary {
   const client = detectClient(all);
   const pick = (q: Question) => answered(req.answers, q)?.answer || "";
   const items = [
-    { label: "Задача", value: req.task.trim() },
+    { label: "Задача", value: req.task.trim().slice(0, LIMITS.summaryValue) },
     { label: "Клиент", value: client ? CLIENT_LABEL[client] : pick(Q.client) },
     { label: "Формат", value: req.service || (format ? FORMAT_LABEL[format] : pick(Q.format)) },
     ...req.answers

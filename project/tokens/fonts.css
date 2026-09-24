@@ -1,7 +1,0 @@
-/* Single family: Onest Variable (full Cyrillic). TT Hoves Pro is the preferred face but is a commercial licence — swap the @import for self-hosted @font-face when the files are available. */
-@import url("https://fonts.googleapis.com/css2?family=Onest:wght@300..900&display=swap");
-:root{
---font-sans:"Onest","TT Hoves Pro",system-ui,-apple-system,sans-serif;
---font-display:var(--font-sans);
---font-text:var(--font-sans);
-}

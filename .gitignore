@@ -4,7 +4,11 @@ out/
 *.tsbuildinfo
 next-env.d.ts
 .DS_Store
-.env*.local
+.env*
+!.env.example
+.dev.vars*
+dist/
+.wrangler/
 
 # single-file preview build output
 /preview/

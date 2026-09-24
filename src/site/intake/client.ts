@@ -5,6 +5,8 @@ import { mockNext } from "./mock";
 export const INTAKE_API = (process.env.NEXT_PUBLIC_INTAKE_API_URL || "").replace(/\/$/, "");
 export const INTAKE_MOCK = !INTAKE_API;
 export const PRIVACY_URL = process.env.NEXT_PUBLIC_PRIVACY_URL || "";
+// Separate AI briefing from lead delivery. Enable only after delivery and policy are ready
+export const DELIVERY_ENABLED = process.env.NEXT_PUBLIC_INTAKE_DELIVERY_ENABLED === "true" && !!PRIVACY_URL && !INTAKE_MOCK;
 
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -54,13 +56,7 @@ export async function nextStep(req: NextRequest): Promise<NextResponse> {
 }
 
 export async function submitBrief(req: SubmitRequest): Promise<SubmitResponse> {
-  if (INTAKE_MOCK) {
-    await wait(1100);
-    try {
-      localStorage.setItem("sborka-intake-last", JSON.stringify(req));
-    } catch {}
-    return { ok: true, id: `demo-${req.sessionId.slice(0, 6)}` };
-  }
+  if (!DELIVERY_ENABLED) return { ok: false, error: "delivery_not_configured" };
   try {
     return await post<SubmitResponse>("/submit", req, 15000);
   } catch {

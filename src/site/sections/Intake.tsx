@@ -5,11 +5,11 @@ import { Arrow } from "../Arrow";
 import { STUDIO_EMAIL, STUDIO_TELEGRAM } from "../constants";
 import { SERVICES, serviceFromQuery } from "../brief";
 import { LIMITS, MAX_QUESTIONS, type Answer, type Question, type Summary } from "../intake/contract";
-import { INTAKE_MOCK, PRIVACY_URL, nextStep, submitBrief } from "../intake/client";
+import { DELIVERY_ENABLED, INTAKE_MOCK, PRIVACY_URL, nextStep, submitBrief } from "../intake/client";
 import { CONTACT_LABEL, collectContacts, splitContacts } from "../intake/contacts";
 import { ThinkingAtom } from "../intake/ThinkingAtom";
 
-const STORAGE_KEY = "sborka-intake-v2";
+const STORAGE_KEY = "sborka-intake-v3";
 const EXAMPLES = [
   "Лендинг для запуска нового продукта к концу месяца",
   "AI-ассистент, который отвечает клиентам по нашему каталогу",
@@ -262,7 +262,7 @@ export function Intake() {
       setS((st) => ({ ...st, entries: next(st.entries), question: { question: res.question, options: res.options } }));
     } else {
       added.push({ role: "studio", text: "", kind: "summary", animate: true });
-      added.push({ role: "studio", text: CONTACT_QUESTION, animate: true });
+      added.push({ role: "studio", text: DELIVERY_ENABLED ? CONTACT_QUESTION : "Бриф готов, его можно изменить и скопировать. Прием заявок пока не подключен", animate: true });
       const next = push(added);
       setS((st) => ({ ...st, entries: next(st.entries), question: null, summary: res.summary, phase: "contact" }));
     }
@@ -294,7 +294,7 @@ export function Intake() {
   };
 
   const sendContact = async () => {
-    if (!s.summary || thinking || revealing) return;
+    if (!DELIVERY_ENABLED || !s.summary || thinking || revealing) return;
     const found = splitContacts(draft);
     if (!found.length) {
       setHint("Не похоже на email, Telegram или телефон. Проверьте, пожалуйста");
@@ -405,7 +405,7 @@ export function Intake() {
               <br />
               что хотите сделать
             </h2>
-            <p>Пара слов о задаче. AI задаст несколько уточнений и соберет бриф, а мы вернемся с оценкой</p>
+            <p>{DELIVERY_ENABLED ? "Пара слов о задаче. AI задаст несколько уточнений и соберет бриф, а мы вернемся с оценкой" : "Пара слов о задаче. AI задаст несколько уточнений и соберет бриф. Пока тестируем чат, без отправки заявки"}</p>
             <div className="intake-contact">
               {STUDIO_TELEGRAM && (
                 <a className="text-link" href={`https://t.me/${STUDIO_TELEGRAM.replace("@", "")}`} target="_blank" rel="noreferrer">
@@ -430,7 +430,7 @@ export function Intake() {
                 <span>{status}</span>
               </div>
               {phase !== "compose" && (
-                <button type="button" className="ci-link" onClick={restart}>
+                <button type="button" className="ci-link" onClick={restart} disabled={busy}>
                   Начать заново
                 </button>
               )}
@@ -485,7 +485,18 @@ export function Intake() {
                 </div>
               )}
 
-              {phase !== "sent" ? (
+              {phase === "contact" && !DELIVERY_ENABLED ? (
+                <div className="ci-done">
+                  <button type="button" className="ci-link" disabled={busy} onClick={async () => {
+                    if (!s.summary) return;
+                    try {
+                      await navigator.clipboard.writeText([s.summary.title, ...s.summary.items.map(i => `${i.label}: ${i.value}`)].join("\n"));
+                      setHint("Бриф скопирован");
+                    } catch { setHint("Не удалось скопировать. Выделите текст брифа вручную"); }
+                  }}>Скопировать бриф</button>
+                  <button type="button" className="ci-link" onClick={restart} disabled={busy}>Новый проект</button>
+                </div>
+              ) : phase !== "sent" ? (
                 <form className={`ci-bar${busy ? " is-busy" : ""}`} onSubmit={submit}>
                   <textarea
                     ref={input}
@@ -540,7 +551,9 @@ export function Intake() {
                   )}
                 </div>
               )}
-              {phase === "contact" && (
+              {phase === "compose" && !DELIVERY_ENABLED && <p className="ci-note">Не указывайте контакты и личные данные в описании задачи</p>}
+              {phase === "contact" && !DELIVERY_ENABLED && hint && <p className="ci-note" role="status">{hint}</p>}
+              {phase === "contact" && DELIVERY_ENABLED && (
                 <p className={`ci-note${hint ? " is-error" : ""}`} role={hint ? "alert" : undefined}>
                   {hint || (
                     <>
