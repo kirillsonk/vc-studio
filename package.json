@@ -9,7 +9,8 @@
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "check:copy": "node scripts/check-copy.mjs",
-    "prebuild": "npm run check:copy"
+    "prebuild": "npm run check:copy",
+    "build:symbol": "node scripts/build-symbol.mjs"
   },
   "dependencies": {
     "next": "^15.5.25",

@@ -1,0 +1,12 @@
+{
+  "note": "Monogram «СБ / ОР / КА». Shared by the 3D scene (scene.ts) and the static fallback (scripts/build-symbol.mjs). Letter-local coordinates, y up; each letter is 100 units tall. Commands: M x y, L x y, C x1 y1 x2 y2 x y, A cx cy rx ry fromDeg toDeg zAmplitude. A letter may have several strokes; each stroke becomes three parallel ribbons",
+  "spread": 10,
+  "letters": [
+    { "char": "С", "x": -95, "y": 150, "strokes": [[["A", 6, 0, 56, 50, 48, 312, 10]]] },
+    { "char": "Б", "x": 95, "y": 150, "strokes": [[["M", 54, 50], ["L", -36, 50], ["C", -42.6, 50, -48, 44.6, -48, 38], ["L", -48, -38], ["C", -48, -44.6, -42.6, -50, -36, -50], ["L", 4, -50], ["C", 56, -50, 56, 6, 4, 6], ["L", -40, 6]]] },
+    { "char": "О", "x": -95, "y": 0, "strokes": [[["A", 0, 0, 54, 50, 100, 445, 8]]] },
+    { "char": "Р", "x": 95, "y": 0, "strokes": [[["M", -46, -50], ["L", -46, 38], ["C", -46, 44.6, -40.6, 50, -34, 50], ["L", 6, 50], ["C", 58, 50, 58, -6, 6, -6], ["L", -38, -6]]] },
+    { "char": "К", "x": -95, "y": -150, "strokes": [[["M", -46, 50], ["L", -46, -50]], [["M", 48, 50], ["L", -10, 8], ["C", -21.3, -0.2, -21.5, 0, -10, -8], ["L", 50, -50]]] },
+    { "char": "А", "x": 95, "y": -150, "strokes": [[["M", -52, -50], ["L", -9, 40], ["C", -5, 49, 5, 49, 9, 40], ["L", 52, -50]], [["M", -27, -14], ["L", 27, -14]]] }
+  ]
+}

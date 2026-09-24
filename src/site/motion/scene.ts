@@ -1,5 +1,7 @@
 import * as THREE from "three";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
+import MONOGRAM from "./monogram.json";
+import { sampleStroke } from "./strokes.mjs";
 
 const clamp = (x: number) => Math.max(0, Math.min(1, x));
 const ease = (x: number) => x * x * (3 - 2 * x);
@@ -57,51 +59,44 @@ export function createVCScene(host: HTMLElement, canvas: HTMLCanvasElement) {
   light.position.set(-300, 400, 500);
   scene.add(light, new THREE.HemisphereLight(0xffffff, 0x62604c, 1.4));
 
-  // Monogram «СБ». С is an open ellipse arc; Б is one continuous stroke:
-  // top bar, stem, bottom bar, bowl. Corners are rounded so the three parallel
-  // strands stay clear of each other where the path turns.
-  const v3 = (x: number, y: number, z = 0) => new THREE.Vector3(x, y, z);
-  const K = 13.25; // cubic handle length for a 24 px quarter round
-  const be = new THREE.CurvePath<THREE.Vector3>();
-  be.add(new THREE.LineCurve3(v3(212, 127), v3(60, 127)));
-  be.add(new THREE.CubicBezierCurve3(v3(60, 127), v3(60 - K, 127), v3(36, 127 - (24 - K)), v3(36, 103)));
-  be.add(new THREE.LineCurve3(v3(36, 103), v3(36, -87)));
-  be.add(new THREE.CubicBezierCurve3(v3(36, -87), v3(36, -87 - (24 - K)), v3(60 - K, -111), v3(60, -111)));
-  be.add(new THREE.LineCurve3(v3(60, -111), v3(128, -111)));
-  be.add(new THREE.CubicBezierCurve3(v3(128, -111, 0), v3(218, -111, 6), v3(218, 19, 6), v3(128, 19, 0)));
-  be.add(new THREE.LineCurve3(v3(128, 19), v3(58, 19)));
-  const letters = [
-    Array.from({ length: LENGTH + 1 }, (_, i) => {
-      const a = ((48 + (i / LENGTH) * 264) * Math.PI) / 180;
-      return new THREE.Vector3(
-        -120 + 99 * Math.cos(a),
-        8 + 119 * Math.sin(a),
-        Math.sin(a) * 13,
-      );
+  // Monogram «СБ / ОР / КА», geometry in monogram.json. Each stroke becomes three
+  // parallel ribbons. On scroll only the first strokes of С and Б continue into the
+  // two background waves; the rest fade out so the background stays as calm as before.
+  const strokes = MONOGRAM.letters.flatMap((letter, li) =>
+    letter.strokes.map((cmds, si) => ({
+      points: sampleStroke(cmds, letter.x, letter.y, LENGTH).map(
+        ([x, y, z]) => new THREE.Vector3(x, y, z),
+      ),
+      primary: li < 2 && si === 0,
+      wave: li % 2,
+    })),
+  );
+  const SPREAD = MONOGRAM.spread;
+  const ribbons = strokes.flatMap((stroke) =>
+    [0, 1, 2].map((layer) => {
+      const copper = layer === 2;
+      const material = new THREE.MeshStandardMaterial({
+        color: copper ? 0xbd542e : 0xa6b0a7,
+        metalness: copper ? 0.8 : 1,
+        roughness: copper ? 0.24 : 0.2,
+        envMapIntensity: 1.4,
+        transparent: true,
+        side: THREE.DoubleSide,
+      });
+      const geometry = makeRibbon();
+      const mesh = new THREE.Mesh(geometry, material);
+      mesh.frustumCulled = false;
+      scene.add(mesh);
+      return {
+        mesh,
+        geometry,
+        material,
+        stroke,
+        layer,
+        points: Array.from({ length: LENGTH + 1 }, () => new THREE.Vector3()),
+      };
     }),
-    be.getSpacedPoints(LENGTH),
-  ];
-  const ribbons = Array.from({ length: 6 }, (_, index) => {
-    const copper = index % 3 === 2;
-    const material = new THREE.MeshStandardMaterial({
-      color: copper ? 0xbd542e : 0xa6b0a7,
-      metalness: copper ? 0.8 : 1,
-      roughness: copper ? 0.24 : 0.2,
-      envMapIntensity: 1.4,
-      transparent: true,
-      side: THREE.DoubleSide,
-    });
-    const geometry = makeRibbon();
-    const mesh = new THREE.Mesh(geometry, material);
-    mesh.frustumCulled = false;
-    scene.add(mesh);
-    return {
-      mesh,
-      geometry,
-      material,
-      points: Array.from({ length: LENGTH + 1 }, () => new THREE.Vector3()),
-    };
-  });
+  );
   const rotation = new THREE.Matrix4();
   const euler = new THREE.Euler();
   const point = new THREE.Vector3();
@@ -160,18 +155,22 @@ export function createVCScene(host: HTMLElement, canvas: HTMLCanvasElement) {
     rotation.makeRotationFromEuler(euler);
     scene.environmentRotation.y = Math.sin(phase * 0.18) * 0.16;
 
-    ribbons.forEach(({ geometry, material, points }, index) => {
-      const letter = Math.floor(index / 3);
-      const layer = index % 3;
-      const spread = (layer - 1) * 15;
+    ribbons.forEach(({ mesh, geometry, material, points, stroke, layer }) => {
+      const { wave, primary } = stroke;
+      const spread = (layer - 1) * SPREAD;
       const morph = ease(clamp(progress * 1.14 - layer * 0.065));
+      // Secondary strokes are gone before the waves form; skip their geometry work entirely
+      const fade = primary ? 1 : Math.max(0, 1 - morph * 1.8);
+      mesh.visible = fade > 0;
+      if (!mesh.visible) return;
+      const path = stroke.points;
       for (let i = 0; i <= LENGTH; i++) {
         const t = i / LENGTH;
-        const base = letters[letter][i];
+        const base = path[i];
         tangent
           .subVectors(
-            letters[letter][Math.min(LENGTH, i + 1)],
-            letters[letter][Math.max(0, i - 1)],
+            path[Math.min(LENGTH, i + 1)],
+            path[Math.max(0, i - 1)],
           )
           .normalize();
         normal.set(-tangent.y, tangent.x, 0).normalize();
@@ -186,13 +185,13 @@ export function createVCScene(host: HTMLElement, canvas: HTMLCanvasElement) {
         point.x += originX;
         point.y += originY + Math.sin(phase * 0.65) * 5 * scale * idle;
         // Two large diagonal waves travel through the canvas instead of attaching to its edges.
-        const travel = scroll * 0.00135 + letter * 2.1;
+        const travel = scroll * 0.00135 + wave * 2.1;
         const targetX =
           (t * 1.65 - 0.825) * width + Math.sin(travel * 0.7) * width * 0.18;
         const targetY =
           Math.sin(t * Math.PI * 1.65 + travel) * height * 0.38 +
-          (letter ? -0.1 : 0.13) * height +
-          spread * 1.8;
+          (wave ? -0.1 : 0.13) * height +
+          (layer - 1) * 27;
         const targetZ = Math.cos(t * Math.PI * 2 + travel) * 80;
         points[i].set(
           THREE.MathUtils.lerp(point.x, targetX, morph),
@@ -204,9 +203,9 @@ export function createVCScene(host: HTMLElement, canvas: HTMLCanvasElement) {
         "position",
       ) as THREE.BufferAttribute;
       const wide =
-        (layer === 2 ? 4.3 : 6.1) * scale * (1 - morph) +
+        (layer === 2 ? 3.3 : 4.7) * scale * (1 - morph) +
         (width < 651 ? 2.8 : 5) * morph;
-      const depth = 6 * scale * (1 - morph) + 3 * morph;
+      const depth = 4.8 * scale * (1 - morph) + 3 * morph;
       for (let i = 0; i <= LENGTH; i++) {
         tangent
           .subVectors(
@@ -233,7 +232,9 @@ export function createVCScene(host: HTMLElement, canvas: HTMLCanvasElement) {
       }
       positions.needsUpdate = true;
       geometry.computeVertexNormals();
-      material.opacity = 1 - morph * (width < 651 ? 0.9 : 0.84);
+      material.opacity = primary
+        ? 1 - morph * (width < 651 ? 0.9 : 0.84)
+        : fade;
     });
     renderer.render(scene, camera);
     host.dataset.motion = "active";
