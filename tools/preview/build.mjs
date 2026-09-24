@@ -15,7 +15,7 @@ const result = await esbuild.build({
   target: 'es2020',
   jsx: 'automatic',
   write: false,
-  define: { 'process.env.NODE_ENV': '"production"', 'process.env.NEXT_PUBLIC_STUDIO_EMAIL': '""', 'process.env.NEXT_PUBLIC_STUDIO_TELEGRAM': '""' },
+  define: { 'process.env.NODE_ENV': '"production"', 'process.env.NEXT_PUBLIC_STUDIO_EMAIL': '""', 'process.env.NEXT_PUBLIC_STUDIO_TELEGRAM': '""', 'process.env.NEXT_PUBLIC_INTAKE_API_URL': '""', 'process.env.NEXT_PUBLIC_PRIVACY_URL': '""' },
   alias: {
     'next/link': resolve(root, 'tools/preview/shims/link.tsx'),
     'next/navigation': resolve(root, 'tools/preview/shims/router.ts'),

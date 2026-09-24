@@ -41,7 +41,7 @@ export function Nav() {
           href="/#intake"
           onClick={() => setOpen(false)}
         >
-          Обсудить проект <Arrow diagonal />
+          Начать проект <Arrow diagonal />
         </Link>
         <button
           className="menu-toggle"

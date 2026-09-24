@@ -27,7 +27,7 @@ export function Footer() {
                 Telegram ↗
               </a>
             )}
-            <Link href="/#intake">Обсудить проект ↗</Link>
+            <Link href="/#intake">Начать проект ↗</Link>
           </div>
         </div>
         <div className="footer-bottom">

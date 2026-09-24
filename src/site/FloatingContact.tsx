@@ -39,7 +39,7 @@ export function FloatingContact() {
       className="action action-primary floating-contact"
       hidden={!visible}
     >
-      Обсудить проект <Arrow diagonal />
+      Начать проект <Arrow diagonal />
     </a>
   );
 }

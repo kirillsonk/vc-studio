@@ -45,6 +45,8 @@ for (const file of [
   "README.md",
   "AGENTS.md",
   "docs/intake-flow.md",
+  "docs/intake-api.md",
+  "docs/astra-intake-prompt.md",
 ])
   await scan(file);
 if (violations.length) {

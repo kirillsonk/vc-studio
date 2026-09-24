@@ -25,7 +25,7 @@ export function Hero() {
             </p>
             <div className="hero-actions">
               <Link className="action action-primary" href="/#intake">
-                Обсудить проект <Arrow diagonal />
+                Начать проект <Arrow diagonal />
               </Link>
               <Link className="text-link" href="/#cases">
                 Открыть демо <Arrow />
