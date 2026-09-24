@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 import HERO from "./hero.json";
-import { applyPlacement, buildHero, offsetStroke, placeAt } from "./hero-layout.mjs";
+import { applyPlacement, buildHero, offsetStroke, placeAt, placeCompact, COMPACT } from "./hero-layout.mjs";
 
 const clamp = (x: number) => Math.max(0, Math.min(1, x));
 const ease = (x: number) => x * x * (3 - 2 * x);
@@ -153,7 +153,8 @@ export function createVCScene(host: HTMLElement, canvas: HTMLCanvasElement) {
     const progress = ease(
       clamp((scroll - start) / Math.max(500, height * 0.8)),
     );
-    const scale = Math.min(boxWidth / 540, boxHeight / 500);
+    const compact = width <= COMPACT.breakpoint;
+    const scale = Math.min(boxWidth / (compact ? COMPACT.width : 540), boxHeight / (compact ? COMPACT.height : 500));
     const originX = left + boxWidth / 2 - width / 2;
     const originY = height / 2 - (top - scroll + boxHeight / 2);
     const idle = 1 - progress;
@@ -166,19 +167,19 @@ export function createVCScene(host: HTMLElement, canvas: HTMLCanvasElement) {
     rotation.makeRotationFromEuler(euler);
     scene.environmentRotation.y = Math.sin(phase * 0.18) * 0.16;
 
-    for (const obj of objects) placements.set(obj, placeAt(obj, HERO, phase));
+    for (const obj of objects) placements.set(obj, compact ? placeCompact(obj, phase) : placeAt(obj, HERO, phase));
 
     {
       const morph = ease(clamp(progress * 1.14));
       const fade = Math.max(0, 1 - morph * 1.8);
       nucleus.visible = fade > 0;
-      point.set(0, 0, 0).applyMatrix4(rotation).multiplyScalar(scale);
+      point.set(...(compact ? COMPACT.dot : [0, 0, 0] as [number, number, number])).applyMatrix4(rotation).multiplyScalar(scale);
       nucleus.position.set(
         point.x + originX,
         point.y + originY + Math.sin(phase * 0.65) * 5 * scale * idle,
         point.z,
       );
-      nucleus.scale.setScalar(HERO.atom.nucleus.radius * scale * (1 + Math.sin(phase * 1.3) * 0.04));
+      nucleus.scale.setScalar((compact ? COMPACT.radius : HERO.atom.nucleus.radius) * scale * (1 + Math.sin(phase * 1.3) * 0.04));
       nucleusMaterial.opacity = fade;
     }
 
@@ -187,7 +188,7 @@ export function createVCScene(host: HTMLElement, canvas: HTMLCanvasElement) {
       const morph = ease(clamp(progress * 1.14 - layer * 0.065));
       // Secondary strokes are gone before the waves form; skip their geometry work entirely
       const fade = primary ? 1 : Math.max(0, 1 - morph * 1.8);
-      mesh.visible = fade > 0;
+      mesh.visible = fade > 0 && !(compact && obj.kind === "ring");
       if (!mesh.visible) return;
       const placement = placements.get(obj)!;
       for (let i = 0; i <= LENGTH; i++) {

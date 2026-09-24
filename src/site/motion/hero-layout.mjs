@@ -68,6 +68,20 @@ export function placeAt(obj, spec, t) {
   return { x: 0, y: 0, z: 0, rx: at.tilt, ry: Math.sin(t * 0.3) * 0.45, rz: t * at.spin, scale: 1 };
 }
 
+// A shallow wordmark replaces the orbit on tablet and phone screens.
+export const COMPACT = { breakpoint: 900, width: 900, height: 220, dot: [405, -44, 8], radius: 10 };
+export function placeCompact(obj, t) {
+  return {
+    x: -338 + obj.index * 130,
+    y: Math.sin(t * 0.65 + obj.index * 0.55) * 4,
+    z: Math.sin(t * 0.45 + obj.index * 0.6) * 7,
+    rx: Math.sin(t * 0.4 + obj.index * 0.35) * 0.06,
+    ry: Math.sin(t * 0.5 + obj.index * 0.45) * 0.12,
+    rz: 0,
+    scale: 1,
+  };
+}
+
 /** Local point -> composed space, same order in the scene and in the SVG script */
 export function applyPlacement([x, y, z], p) {
   x *= p.scale; y *= p.scale; z *= p.scale;

@@ -2446,3 +2446,31 @@ svg {
     max-width: 640px;
   }
 }
+
+/* On narrow screens the sculpture becomes a readable, shallow wordmark. */
+@media (max-width: 900px) {
+  .hero-grid {
+    grid-template-columns: minmax(0, 1fr);
+    min-height: 0;
+  }
+  .hero-copy {
+    padding-bottom: 0;
+  }
+  .hero-lead {
+    max-width: 620px;
+  }
+  .vc-art {
+    width: 100%;
+    max-width: 800px;
+    height: clamp(150px, 25vw, 225px);
+    margin: 12px 0 0;
+    justify-self: center;
+  }
+  .vc-art .motion-toggle {
+    right: 0;
+    bottom: 0;
+  }
+  .vc-halo {
+    inset: 20% 0;
+  }
+}

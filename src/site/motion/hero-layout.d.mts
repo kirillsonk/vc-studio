@@ -13,3 +13,6 @@ export function buildHero(spec: unknown, count: number): HeroObject[];
 export function placeAt(obj: HeroObject, spec: unknown, t: number): Placement;
 export function applyPlacement(p: [number, number, number], placement: Placement): [number, number, number];
 export function offsetStroke(points: Array<[number, number, number]>, amount: number): Array<[number, number, number]>;
+
+export const COMPACT: { breakpoint: number; width: number; height: number; dot: [number, number, number]; radius: number };
+export function placeCompact(obj: HeroObject, t: number): Placement;

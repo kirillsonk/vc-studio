@@ -42,6 +42,8 @@ export function VCMotion() {
   return (
     <div ref={anchor} className="production-art vc-art">
       <div className="vc-halo" aria-hidden="true" />
+      <picture>
+        <source media="(max-width: 900px)" srcSet="/brand/sborka-wordmark.svg" />
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         className="vc-static"
@@ -51,6 +53,7 @@ export function VCMotion() {
         height="500"
         aria-hidden="true"
       />
+      </picture>
       {allowed && (
         <button
           className="motion-toggle"

@@ -2,7 +2,7 @@
 // composition the 3D scene uses, frozen at t = 0. Run after editing
 // src/site/motion/hero.json:   npm run build:symbol
 import { readFileSync, writeFileSync } from "node:fs";
-import { applyPlacement, buildHero, offsetStroke, placeAt } from "../src/site/motion/hero-layout.mjs";
+import { applyPlacement, buildHero, offsetStroke, placeAt, placeCompact, COMPACT } from "../src/site/motion/hero-layout.mjs";
 
 const spec = JSON.parse(readFileSync(new URL("../src/site/motion/hero.json", import.meta.url), "utf8"));
 const COUNT = 160;
@@ -39,3 +39,21 @@ writeFileSync(new URL("../public/brand/sborka-symbol.svg", import.meta.url),
 writeFileSync(new URL("../public/brand/sborka-symbol-mono.svg", import.meta.url),
   head + g("", strands.map((s) => s.nucleus ? `<circle cx="${cx}" cy="${cy}" r="${r}" fill="#111214" stroke="none"/>\n` : `<path d="${d(s.pts)}" stroke="#111214" stroke-width="${w(s.width)}"/>\n`).join("")));
 console.log(`sborka-symbol.svg: ${strands.length - 1} strands and the nucleus`);
+
+// Compact fallback follows the same letter placement as the responsive 3D scene.
+const compactPaths = [];
+for (const obj of buildHero(spec, COUNT).filter((obj) => obj.kind === "letter")) {
+  const placement = placeCompact(obj, 0);
+  for (const stroke of obj.strokes) {
+    for (let layer = 0; layer < 3; layer++) {
+      const pts = offsetStroke(stroke.points, (layer - 1) * obj.spread)
+        .map((p) => applyPlacement(p, placement));
+      const path = "M" + pts.map(([x, y]) => `${(450 + x).toFixed(1)} ${(110 - y).toFixed(1)}`).join(" ");
+      compactPaths.push(`<path d="${path}" stroke="url(#${layer === 2 ? "copper" : "metal"})" stroke-width="${layer === 2 ? 5.3 : 7.5}"/>`);
+    }
+  }
+}
+const compactDefs = defs.replace('x1="50" y1="80" x2="470" y2="420"', 'x1="150" y1="0" x2="650" y2="220"');
+writeFileSync(new URL("../public/brand/sborka-wordmark.svg", import.meta.url),
+  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${COMPACT.width} ${COMPACT.height}" fill="none">\n` + compactDefs +
+  g(' filter="url(#shadow)"', compactPaths.join("\n") + `<circle cx="${450 + COMPACT.dot[0]}" cy="${110 - COMPACT.dot[1]}" r="${COMPACT.radius}" fill="url(#nucleus)"/>`));
