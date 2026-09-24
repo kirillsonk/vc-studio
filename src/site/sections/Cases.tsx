@@ -71,7 +71,7 @@ export function Playground() {
             </div>
           </div>
           <div className="game-poster-top">
-            <span>VC / Playground</span>
+            <span>Сборка / Playground</span>
             <span>Одна кнопка. Тридцать секунд</span>
           </div>
           <button

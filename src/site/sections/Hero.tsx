@@ -9,7 +9,7 @@ export function Hero() {
     <section className="hero" aria-labelledby="hero-title">
       <Container>
         <div className="hero-eyebrow">
-          <span>Сайты, веб-сервисы и интерактивные проекты</span>
+          <span>Сайты, спецпроекты и сервисы для агентств и бизнеса</span>
         </div>
         <div className="hero-grid">
           <div className="hero-copy">

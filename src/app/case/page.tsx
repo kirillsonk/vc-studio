@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import { CasePage } from "@/site/pages/CasePage";
 export const metadata: Metadata = {
-  title: "Deploy Run | VC Studio",
+  title: "Deploy Run | Сборка",
   description:
-    "Браузерная игра студии VC Studio. Механика, интерфейс и устройство интерактивного демо",
+    "Браузерная игра студии Сборка. Механика, интерфейс и устройство интерактивного демо",
 };
 export default function Page() {
   return <CasePage />;

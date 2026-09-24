@@ -1,4 +1,4 @@
-/* VC Studio - editorial direction, September 2026 */
+/* Сборка - editorial direction, September 2026 */
 * {
   box-sizing: border-box;
 }
@@ -87,6 +87,15 @@ svg {
   color: var(--brand);
   margin: 0 5px;
   font-weight: 400;
+}
+/* The brand accent: a small vermilion square, the same mark as the section kickers */
+.wordmark-mark {
+  display: inline-block;
+  width: 0.2em;
+  height: 0.2em;
+  margin-left: 0.08em;
+  background: var(--brand);
+  vertical-align: baseline;
 }
 .nav-links {
   display: flex;

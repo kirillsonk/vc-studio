@@ -3,7 +3,7 @@ import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Container } from "./Chrome";
-import { HOME_SECTIONS } from "./constants";
+import { BRAND_NAME, HOME_SECTIONS } from "./constants";
 import { Arrow } from "./Arrow";
 export function Nav() {
   const [open, setOpen] = React.useState(false);
@@ -24,10 +24,10 @@ export function Nav() {
         <Link
           href="/"
           className="wordmark"
-          aria-label="VC Studio, главная"
+          aria-label={`${BRAND_NAME}, главная`}
           onClick={() => setOpen(false)}
         >
-          vc<span className="wordmark-slash">/</span>studio
+          сборка<span className="wordmark-mark" aria-hidden="true" />
         </Link>
         <nav className="nav-links" aria-label="Основная навигация">
           {HOME_SECTIONS.map(([id, label]) => (

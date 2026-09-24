@@ -6,7 +6,7 @@ const money = (value: number) =>
 const MODELS = [
   {
     id: "agency",
-    name: "Агентство",
+    name: "Обычная разработка",
     formula: "100 часов × 5 000 ₽ / час",
     parts: [
       {
@@ -35,7 +35,7 @@ const MODELS = [
   },
   {
     id: "studio",
-    name: "VC Studio",
+    name: "Сборка",
     formula: "Дизайн + токены AI + сопровождение",
     parts: [
       {

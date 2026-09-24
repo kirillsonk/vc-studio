@@ -57,37 +57,29 @@ export function createVCScene(host: HTMLElement, canvas: HTMLCanvasElement) {
   light.position.set(-300, 400, 500);
   scene.add(light, new THREE.HemisphereLight(0xffffff, 0x62604c, 1.4));
 
-  const v = new THREE.CurvePath<THREE.Vector3>();
-  v.add(
-    new THREE.LineCurve3(
-      new THREE.Vector3(-220, 135, 0),
-      new THREE.Vector3(-139, -69, 0),
-    ),
-  );
-  v.add(
-    new THREE.CubicBezierCurve3(
-      new THREE.Vector3(-139, -69, 0),
-      new THREE.Vector3(-128, -114, 4),
-      new THREE.Vector3(-94, -114, 4),
-      new THREE.Vector3(-82, -69, 0),
-    ),
-  );
-  v.add(
-    new THREE.LineCurve3(
-      new THREE.Vector3(-82, -69, 0),
-      new THREE.Vector3(0, 135, 0),
-    ),
-  );
+  // Monogram «СБ». С is an open ellipse arc; Б is one continuous stroke:
+  // top bar, stem, bottom bar, bowl. Corners are rounded so the three parallel
+  // strands stay clear of each other where the path turns.
+  const v3 = (x: number, y: number, z = 0) => new THREE.Vector3(x, y, z);
+  const K = 13.25; // cubic handle length for a 24 px quarter round
+  const be = new THREE.CurvePath<THREE.Vector3>();
+  be.add(new THREE.LineCurve3(v3(212, 127), v3(60, 127)));
+  be.add(new THREE.CubicBezierCurve3(v3(60, 127), v3(60 - K, 127), v3(36, 127 - (24 - K)), v3(36, 103)));
+  be.add(new THREE.LineCurve3(v3(36, 103), v3(36, -87)));
+  be.add(new THREE.CubicBezierCurve3(v3(36, -87), v3(36, -87 - (24 - K)), v3(60 - K, -111), v3(60, -111)));
+  be.add(new THREE.LineCurve3(v3(60, -111), v3(128, -111)));
+  be.add(new THREE.CubicBezierCurve3(v3(128, -111, 0), v3(218, -111, 6), v3(218, 19, 6), v3(128, 19, 0)));
+  be.add(new THREE.LineCurve3(v3(128, 19), v3(58, 19)));
   const letters = [
-    v.getSpacedPoints(LENGTH),
     Array.from({ length: LENGTH + 1 }, (_, i) => {
       const a = ((48 + (i / LENGTH) * 264) * Math.PI) / 180;
       return new THREE.Vector3(
-        126 + 99 * Math.cos(a),
+        -120 + 99 * Math.cos(a),
         8 + 119 * Math.sin(a),
         Math.sin(a) * 13,
       );
     }),
+    be.getSpacedPoints(LENGTH),
   ];
   const ribbons = Array.from({ length: 6 }, (_, index) => {
     const copper = index % 3 === 2;
@@ -187,10 +179,7 @@ export function createVCScene(host: HTMLElement, canvas: HTMLCanvasElement) {
           .copy(base)
           .addScaledVector(
             normal,
-            spread *
-              (letter === 0
-                ? 1 - 0.4 * Math.exp(-(((t - 0.5) / 0.12) ** 2))
-                : 1),
+            spread,
           )
           .applyMatrix4(rotation)
           .multiplyScalar(scale);
@@ -234,14 +223,7 @@ export function createVCScene(host: HTMLElement, canvas: HTMLCanvasElement) {
         for (let j = 0; j <= SIDES; j++) {
           const a = (j / SIDES) * Math.PI * 2 + twist;
           const end = Math.min(1, Math.min(i, LENGTH - i) / 1.6);
-          const taper =
-            letter === 0
-              ? 1 -
-                0.4 *
-                  Math.exp(-(((i / LENGTH - 0.5) / 0.12) ** 2)) *
-                  (1 - morph)
-              : 1;
-          const cap = Math.sqrt(Math.max(0.001, 1 - (1 - end) ** 2)) * taper;
+          const cap = Math.sqrt(Math.max(0.001, 1 - (1 - end) ** 2));
           point
             .copy(points[i])
             .addScaledVector(normal, Math.cos(a) * wide * cap)

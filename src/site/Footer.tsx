@@ -1,13 +1,13 @@
 import Link from "next/link";
 import { Container } from "./Chrome";
-import { STUDIO_EMAIL, STUDIO_TELEGRAM } from "./constants";
+import { BRAND_NAME, STUDIO_EMAIL, STUDIO_TELEGRAM } from "./constants";
 export function Footer() {
   return (
     <footer className="site-footer">
       <Container>
         <div className="footer-top">
           <Link href="/" className="wordmark">
-            vc<span className="wordmark-slash">/</span>studio
+            сборка<span className="wordmark-mark" aria-hidden="true" />
           </Link>
           <p>
             AI ускоряет код
@@ -31,7 +31,7 @@ export function Footer() {
           </div>
         </div>
         <div className="footer-bottom">
-          <span>© {new Date().getFullYear()} VC Studio</span>
+          <span>© {new Date().getFullYear()} {BRAND_NAME}</span>
           <span>Дизайн с характером. Разработка с ответственностью</span>
           <a href="#main">Наверх ↑</a>
         </div>

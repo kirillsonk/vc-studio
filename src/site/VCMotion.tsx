@@ -45,7 +45,7 @@ export function VCMotion() {
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         className="vc-static"
-        src="/brand/vc-symbol.svg"
+        src="/brand/sborka-symbol.svg"
         alt=""
         width="540"
         height="500"
@@ -57,7 +57,7 @@ export function VCMotion() {
           type="button"
           aria-label={
             paused
-              ? "Включить анимацию логотипа"
+              ? "Включить анимацию знака"
               : "Остановить анимацию логотипа"
           }
           aria-pressed={paused}

@@ -52,7 +52,7 @@ function saveScore(score: number): number[] {
 }
 
 /** Deterministic, so the same run always shows the same code */
-const promoCode = (score: number) => 'VC-' + score.toString(36).toUpperCase().padStart(4, '0');
+const promoCode = (score: number) => 'SB-' + score.toString(36).toUpperCase().padStart(4, '0');
 
 export function DeployRun() {
   const canvasRef = React.useRef<HTMLCanvasElement>(null);

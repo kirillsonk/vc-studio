@@ -13,8 +13,8 @@ const onest = Onest({
 });
 
 export const metadata: Metadata = {
-  title: 'VC Studio | Сайты, сервисы и разработка с AI',
-  description: 'Спецпроекты на скорости AI. С ответственностью студии. Промо-сайты, веб-игры, 3D и интерактивные продукты',
+  title: 'Сборка | Сайты и интерактив на скорости AI',
+  description: 'Разрабатываем сайты, спецпроекты и веб-сервисы с AI для агентств и бизнеса. Дизайн, разработка, интеграции и запуск',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
