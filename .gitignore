@@ -7,4 +7,4 @@ next-env.d.ts
 .env*.local
 
 # single-file preview build output
-preview/
+/preview/
