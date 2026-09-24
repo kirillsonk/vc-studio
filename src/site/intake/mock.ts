@@ -11,7 +11,7 @@ type Client = "agency" | "business" | "startup" | "self";
 
 const FORMAT_BY_SERVICE: Format[] = ["site", "ai", "integration", "service", "special", "automation"];
 const FORMAT_WORDS: Array<[Format, RegExp]> = [
-  ["ai", /ассистент|бот|агент|gpt|llm|rag|нейро|\bai\b|ии\b/i],
+  ["ai", /ассистент|(^|[^а-я])бот|агент(?!ств)|gpt|llm|rag|нейро|\bai\b|(^|[^а-я])ии([^а-я]|$)/i],
   ["integration", /mcp|интеграц|crm|amo|битрикс|1с|\bapi\b|связать/i],
   ["special", /3d|спецпроект|игр|промо|конфигуратор|\bar\b|интерактив|анимац/i],
   ["service", /кабинет|сервис|платформ|mvp|приложени|дашборд|портал/i],

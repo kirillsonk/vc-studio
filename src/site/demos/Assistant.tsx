@@ -1,5 +1,6 @@
 "use client";
 import React from "react";
+import { ThinkingAtom } from "../intake/ThinkingAtom";
 
 /**
  * Scripted AI assistant demo. Answers are prepared in advance and matched by keywords;
@@ -86,7 +87,9 @@ export function Assistant() {
   return (
     <div className="assistant">
       <div className="assistant-head">
-        <span className="assistant-avatar" aria-hidden="true" />
+        <span className="assistant-avatar" aria-hidden="true">
+          <ThinkingAtom size={30} still={!busy} />
+        </span>
         <div>
           <strong>Ассистент студии</strong>
           <span>Демо: ответы заготовлены заранее</span>

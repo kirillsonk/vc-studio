@@ -88,7 +88,6 @@ export function Configurator() {
         <span className="configurator-hint">Потяните, чтобы повернуть</span>
       </div>
       <div className="configurator-panel">
-        <span className="configurator-brand">Концепт · бренд вымышленный</span>
         <h3>Термобутылка</h3>
         <fieldset>
           <legend>

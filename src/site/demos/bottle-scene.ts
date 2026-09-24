@@ -96,6 +96,39 @@ export function createBottleScene(host: HTMLElement, canvas: HTMLCanvasElement, 
   shadow.position.y = 0.002;
   scene.add(shadow);
 
+  // Wordmark printed on the body, so the rotation reads at a glance
+  const labelCanvas = document.createElement("canvas");
+  labelCanvas.width = 1024;
+  labelCanvas.height = 256;
+  const labelTexture = new THREE.CanvasTexture(labelCanvas);
+  labelTexture.colorSpace = THREE.SRGBColorSpace;
+  labelTexture.anisotropy = 4;
+  const drawLabel = (bottle: string) => {
+    const c = labelCanvas.getContext("2d")!;
+    const tone = new THREE.Color(bottle);
+    const light = tone.r * 0.299 + tone.g * 0.587 + tone.b * 0.114 > 0.55;
+    const family = getComputedStyle(document.body).fontFamily || "sans-serif";
+    c.clearRect(0, 0, 1024, 256);
+    c.font = `500 150px ${family}`;
+    c.textBaseline = "alphabetic";
+    const word = "сборка";
+    const w = c.measureText(word).width;
+    const x = (1024 - w - 40) / 2;
+    c.fillStyle = light ? "#111214" : "#F5F4F0";
+    c.fillText(word, x, 170);
+    c.fillStyle = bottle.toLowerCase() === "#c94320" ? "#F5F4F0" : "#C94320";
+    c.fillRect(x + w + 12, 138, 30, 30);
+    labelTexture.needsUpdate = true;
+  };
+  drawLabel(initial.color);
+  document.fonts?.ready.then(() => { if (!stopped) { drawLabel(target.color); render(); } });
+  const labelArc = 1.7;
+  const label = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.631, 0.631, 0.42, 64, 1, true, -labelArc / 2, labelArc),
+    new THREE.MeshStandardMaterial({ map: labelTexture, transparent: true, roughness: 0.55, metalness: 0, depthWrite: false }),
+  );
+  product.add(label);
+
   let target = { ...initial };
   const targetColor = new THREE.Color(initial.color);
   let heightScale = initial.size === "750" ? 1 : 0.86;
@@ -144,6 +177,7 @@ export function createBottleScene(host: HTMLElement, canvas: HTMLCanvasElement, 
     heightScale += (wantH - heightScale) * (1 - Math.pow(0.002, dt));
     body.scale.y = heightScale;
     band.position.y = 2.05 * heightScale;
+    label.position.y = 0.95 * heightScale;
     capHolder.position.y = 2.08 * heightScale;
     const wantCap = target.cap === "sport" ? 1 : 0;
     capBlend += (wantCap - capBlend) * (1 - Math.pow(0.001, dt));
@@ -167,6 +201,7 @@ export function createBottleScene(host: HTMLElement, canvas: HTMLCanvasElement, 
 
   return {
     update(next: BottleOptions) {
+      if (next.color !== target.color) drawLabel(next.color);
       target = { ...next };
       targetColor.set(next.color);
       start();
@@ -188,6 +223,7 @@ export function createBottleScene(host: HTMLElement, canvas: HTMLCanvasElement, 
         if (m) m.dispose();
       });
       shadowTexture.dispose();
+      labelTexture.dispose();
       env.dispose();
       renderer.dispose();
       renderer.forceContextLoss();

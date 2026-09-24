@@ -6,10 +6,10 @@ import { STUDIO_EMAIL, STUDIO_TELEGRAM } from "../constants";
 import { SERVICES, serviceFromQuery } from "../brief";
 import { LIMITS, MAX_QUESTIONS, type Answer, type Question, type Summary } from "../intake/contract";
 import { INTAKE_MOCK, PRIVACY_URL, nextStep, submitBrief } from "../intake/client";
-import { CONTACT_LABEL, collectContacts, detectContact } from "../intake/contacts";
+import { CONTACT_LABEL, collectContacts, splitContacts } from "../intake/contacts";
 import { ThinkingAtom } from "../intake/ThinkingAtom";
 
-const STORAGE_KEY = "sborka-intake-v1";
+const STORAGE_KEY = "sborka-intake-v2";
 const EXAMPLES = [
   "Лендинг для запуска нового продукта к концу месяца",
   "AI-ассистент, который отвечает клиентам по нашему каталогу",
@@ -17,13 +17,16 @@ const EXAMPLES = [
   "Личный кабинет для дилеров с заказами и остатками",
   "Связать сайт с amoCRM и отправлять заявки в Telegram",
 ];
+const GREETING = "Расскажите, что хотите сделать. Можно в двух словах, детали уточню сам";
+const CONTACT_QUESTION = "Куда прислать оценку? Оставьте email, Telegram или телефон, как вам удобнее";
 const THINKING = {
   question: ["Читаю задачу", "Прикидываю формат", "Думаю, что уточнить"],
   summary: ["Собираю бриф", "Проверяю, что ничего не упустил"],
+  send: ["Отправляю бриф"],
 };
 
-type Entry = { role: "client" | "studio"; text: string; muted?: boolean; animate?: boolean };
-type Phase = "compose" | "dialog" | "summary" | "sent";
+type Entry = { role: "client" | "studio"; text: string; kind?: "summary"; muted?: boolean; animate?: boolean };
+type Phase = "compose" | "dialog" | "contact" | "sent";
 interface State {
   phase: Phase;
   sessionId: string;
@@ -33,7 +36,6 @@ interface State {
   entries: Entry[];
   question: Question | null;
   summary: Summary | null;
-  sentId: string;
 }
 const initial = (): State => ({
   phase: "compose",
@@ -47,7 +49,6 @@ const initial = (): State => ({
   entries: [],
   question: null,
   summary: null,
-  sentId: "",
 });
 
 const reduceMotion = () =>
@@ -107,7 +108,7 @@ function Thinking({ kind }: { kind: keyof typeof THINKING }) {
   }, [kind]);
   return (
     <li className="ci-thinking" role="status">
-      <ThinkingAtom />
+      <ThinkingAtom size={26} />
       <span className="ci-shimmer" key={i}>{THINKING[kind][i]}</span>
     </li>
   );
@@ -124,7 +125,59 @@ function SendIcon() {
 function autosize(el: HTMLTextAreaElement | null) {
   if (!el) return;
   el.style.height = "auto";
-  el.style.height = `${Math.min(el.scrollHeight, 240)}px`;
+  el.style.height = `${Math.min(el.scrollHeight, 160)}px`;
+}
+
+function SummaryCard({
+  summary,
+  editable,
+  onEdit,
+  delay,
+}: {
+  summary: Summary;
+  editable: boolean;
+  onEdit: (i: number, value: string) => void;
+  delay?: number;
+}) {
+  const [editing, setEditing] = React.useState(false);
+  React.useEffect(() => {
+    if (!editable) setEditing(false);
+  }, [editable]);
+  return (
+    <li className="ci-card" style={{ animationDelay: `${delay ?? 0}ms` }}>
+      <div className="ci-card-head">
+        <h3>{summary.title}</h3>
+        {editable && (
+          <button type="button" className="ci-link" onClick={() => setEditing((v) => !v)}>
+            {editing ? "Готово" : "Изменить"}
+          </button>
+        )}
+      </div>
+      <dl>
+        {summary.items.map((it, i) => (
+          <div key={it.label}>
+            <dt>{it.label}</dt>
+            <dd>
+              {editing ? (
+                <textarea
+                  rows={1}
+                  value={it.value}
+                  aria-label={it.label}
+                  ref={autosize}
+                  onChange={(e) => {
+                    onEdit(i, e.target.value);
+                    autosize(e.target);
+                  }}
+                />
+              ) : (
+                it.value
+              )}
+            </dd>
+          </div>
+        ))}
+      </dl>
+    </li>
+  );
 }
 
 export function Intake() {
@@ -133,14 +186,10 @@ export function Intake() {
   const [thinking, setThinking] = React.useState<null | keyof typeof THINKING>(null);
   const [revealing, setRevealing] = React.useState(false);
   const [focused, setFocused] = React.useState(false);
-  const [editing, setEditing] = React.useState(false);
-  const [contacts, setContacts] = React.useState<string[]>([""]);
-  const [consent, setConsent] = React.useState(false);
-  const [sending, setSending] = React.useState(false);
-  const [error, setError] = React.useState("");
+  const [hint, setHint] = React.useState("");
   const [ready, setReady] = React.useState(false);
   const input = React.useRef<HTMLTextAreaElement>(null);
-  const end = React.useRef<HTMLDivElement>(null);
+  const log = React.useRef<HTMLOListElement>(null);
   const placeholder = useTypingPlaceholder(s.phase === "compose" && !focused && !draft);
 
   // Restore the dialog of this tab and react to service links and CTA clicks
@@ -154,13 +203,11 @@ export function Intake() {
       if (service) setS((st) => (st.phase === "compose" ? { ...st, service } : st));
     };
     pick(location.search);
-    const focusSoon = () =>
-      window.setTimeout(() => input.current?.focus({ preventScroll: true }), 650);
     const clicked = (e: MouseEvent) => {
       const link = e.target instanceof Element ? e.target.closest<HTMLAnchorElement>('a[href*="#intake"]') : null;
       if (!link || link.origin !== location.origin) return;
       pick(link.search);
-      focusSoon();
+      window.setTimeout(() => input.current?.focus({ preventScroll: true }), 650);
     };
     const popped = () => pick(location.search);
     document.addEventListener("click", clicked);
@@ -175,53 +222,56 @@ export function Intake() {
   React.useEffect(() => {
     if (!ready) return;
     try {
-      const { entries, ...rest } = s;
-      sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ ...rest, entries: entries.map(({ animate, ...e }) => e) }));
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ ...s, entries: s.entries.map(({ animate, ...e }) => e) }));
     } catch {}
   }, [s, ready]);
 
-  const scrolled = React.useRef(false);
+  // The chat scrolls inside its own window, the page stays put
   React.useEffect(() => {
-    if (!scrolled.current) {
-      scrolled.current = true;
-      return;
-    }
-    end.current?.scrollIntoView({ block: "nearest", behavior: reduceMotion() ? "auto" : "smooth" });
-  }, [s.entries.length, thinking, s.phase, revealing]);
+    const el = log.current;
+    if (!el) return;
+    const follow = () => el.scrollTo({ top: el.scrollHeight, behavior: reduceMotion() ? "auto" : "smooth" });
+    follow();
+    if (!revealing) return;
+    const t = window.setInterval(follow, 250);
+    return () => clearInterval(t);
+  }, [s.entries.length, thinking, revealing]);
+
+  const push = (added: Entry[]) => {
+    setRevealing(added.some((e) => e.animate) && !reduceMotion());
+    return (entries: Entry[]) => [...entries.map(({ animate, ...e }) => e), ...added];
+  };
 
   const ask = async (base: State, force: boolean) => {
-    setThinking(force || base.answers.length >= MAX_QUESTIONS ? "summary" : "question");
+    const final = force || base.answers.length >= MAX_QUESTIONS;
+    setThinking(final ? "summary" : "question");
     const res = await nextStep({
       schemaVersion: 1,
       sessionId: base.sessionId,
       service: base.service,
       task: base.task,
       answers: base.answers,
-      forceSummary: force || base.answers.length >= MAX_QUESTIONS,
+      forceSummary: final,
     });
+    setThinking(null);
     const added: Entry[] = [];
     if (res.message) added.push({ role: "studio", text: res.message, animate: true });
-    if (res.type === "question") added.push({ role: "studio", text: res.question, animate: true });
-    setThinking(null);
-    setRevealing(added.length > 0 && !reduceMotion());
-    setS((st) => {
-      const entries = [...st.entries.map(({ animate, ...e }) => e), ...added];
-      return res.type === "question"
-        ? { ...st, entries, question: { question: res.question, options: res.options } }
-        : { ...st, entries, question: null, summary: res.summary, phase: "summary" };
-    });
+    if (res.type === "question") {
+      added.push({ role: "studio", text: res.question, animate: true });
+      const next = push(added);
+      setS((st) => ({ ...st, entries: next(st.entries), question: { question: res.question, options: res.options } }));
+    } else {
+      added.push({ role: "studio", text: "", kind: "summary", animate: true });
+      added.push({ role: "studio", text: CONTACT_QUESTION, animate: true });
+      const next = push(added);
+      setS((st) => ({ ...st, entries: next(st.entries), question: null, summary: res.summary, phase: "contact" }));
+    }
   };
 
-  const start = (e?: React.FormEvent) => {
-    e?.preventDefault();
+  const start = () => {
     const task = draft.trim().slice(0, LIMITS.task);
     if (!task || thinking) return;
-    const next: State = {
-      ...s,
-      phase: "dialog",
-      task,
-      entries: [{ role: "client", text: task }],
-    };
+    const next: State = { ...s, phase: "dialog", task, entries: [{ role: "client", text: task }] };
     setS(next);
     setDraft("");
     requestAnimationFrame(() => autosize(input.current));
@@ -243,26 +293,18 @@ export function Intake() {
     ask(next, force);
   };
 
-  const restart = () => {
-    setS(initial());
+  const sendContact = async () => {
+    if (!s.summary || thinking || revealing) return;
+    const found = splitContacts(draft);
+    if (!found.length) {
+      setHint("Не похоже на email, Telegram или телефон. Проверьте, пожалуйста");
+      return;
+    }
+    const text = draft.trim().slice(0, LIMITS.contact);
+    setHint("");
     setDraft("");
-    setEditing(false);
-    setContacts([""]);
-    setConsent(false);
-    setError("");
-    requestAnimationFrame(() => input.current?.focus());
-  };
-
-  const parsed = contacts.map(detectContact);
-  const validContacts = parsed.filter(Boolean).length;
-
-  const send = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!s.summary || sending) return;
-    if (!validContacts) return setError("Оставьте email, Telegram или телефон, чтобы мы могли ответить");
-    if (!consent) return setError("Нужно согласие на обработку контактов");
-    setError("");
-    setSending(true);
+    setS((st) => ({ ...st, entries: [...st.entries.map(({ animate, ...e }) => e), { role: "client", text }] }));
+    setThinking("send");
     const res = await submitBrief({
       schemaVersion: 1,
       sessionId: s.sessionId,
@@ -270,14 +312,38 @@ export function Intake() {
       task: s.task,
       answers: s.answers,
       summary: s.summary,
-      contacts: collectContacts(contacts),
+      contacts: collectContacts(found.map((c) => c.value)),
       consent: true,
       page: location.href,
       utm: Object.fromEntries([...new URLSearchParams(location.search)].filter(([k]) => k.startsWith("utm_"))),
     });
-    setSending(false);
-    if (res.ok) setS((st) => ({ ...st, phase: "sent", sentId: res.id }));
-    else setError("Не получилось отправить. Попробуйте еще раз через минуту, текст заявки сохранен");
+    setThinking(null);
+    if (res.ok) {
+      const where = found[0].kind === "telegram" ? "в Telegram" : found[0].kind === "email" ? "на почту" : "по телефону";
+      const next = push([
+        {
+          role: "studio",
+          text: INTAKE_MOCK
+            ? "Готово, бриф собран. Сейчас сайт в тестовом режиме, поэтому заявка пока никуда не ушла"
+            : `Готово, бриф у нас. Свяжемся ${where} с оценкой и вопросами`,
+          animate: true,
+        },
+      ]);
+      setS((st) => ({ ...st, entries: next(st.entries), phase: "sent" }));
+    } else {
+      const next = push([
+        { role: "studio", text: "Не получилось отправить. Попробуйте еще раз через минуту, бриф сохранен", animate: true },
+      ]);
+      setS((st) => ({ ...st, entries: next(st.entries) }));
+      setDraft(text);
+    }
+  };
+
+  const restart = () => {
+    setS(initial());
+    setDraft("");
+    setHint("");
+    requestAnimationFrame(() => input.current?.focus());
   };
 
   const editItem = (i: number, value: string) =>
@@ -293,17 +359,38 @@ export function Intake() {
         : st,
     );
 
-  const composing = s.phase === "compose";
-  const answering = s.phase === "dialog" && !!s.question && !thinking;
+  const { phase } = s;
+  const busy = !!thinking || revealing;
   const lastAnimated = s.entries.map((e) => !!e.animate).lastIndexOf(true);
   // Entries of one reply reveal one after another
   const delays: number[] = [];
   s.entries.reduce((acc, e, i) => {
     if (!e.animate) return 0;
     delays[i] = acc;
-    return acc + e.text.split(" ").length * 38 + 350;
+    return acc + (e.kind ? 500 : e.text.split(" ").length * 38 + 350);
   }, 0);
-  const optionsVisible = answering && !revealing;
+  const detected = phase === "contact" ? splitContacts(draft) : [];
+  const status =
+    thinking === "send"
+      ? "Отправляет бриф"
+      : thinking
+        ? "Думает"
+        : phase === "compose"
+          ? "Разберет задачу и соберет бриф"
+          : phase === "dialog"
+            ? "Уточняет детали"
+            : phase === "contact"
+              ? "Бриф готов"
+              : INTAKE_MOCK
+                ? "Бриф собран"
+                : "Бриф отправлен";
+
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (phase === "compose") start();
+    else if (phase === "dialog") answer(draft);
+    else if (phase === "contact") sendContact();
+  };
 
   return (
     <section id="intake" className="editorial-section intake-section">
@@ -333,25 +420,28 @@ export function Intake() {
             </div>
           </div>
 
-          <div className={`chat-intake is-${s.phase}`}>
-            {!composing && (
-              <div className="ci-head">
-                <span>
-                  {s.phase === "sent"
-                    ? "Бриф готов"
-                    : s.phase === "summary"
-                      ? "Проверьте бриф"
-                      : `Уточнение ${Math.min(s.answers.length + 1, MAX_QUESTIONS)}`}
-                </span>
+          <div className="ci-window">
+            <div className="ci-head">
+              <span className="assistant-avatar" aria-hidden="true">
+                <ThinkingAtom size={30} still={!thinking} />
+              </span>
+              <div className="ci-head-title">
+                <strong>Ассистент Сборки</strong>
+                <span>{status}</span>
+              </div>
+              {phase !== "compose" && (
                 <button type="button" className="ci-link" onClick={restart}>
                   Начать заново
                 </button>
-              </div>
-            )}
+              )}
+            </div>
 
-            {!composing && (
-              <ol className="ci-log" aria-live="polite">
-                {s.entries.map((e, i) => (
+            <ol className="ci-log" ref={log} aria-live="polite">
+              <li className="ci-msg ci-studio">{GREETING}</li>
+              {s.entries.map((e, i) =>
+                e.kind === "summary" && s.summary ? (
+                  <SummaryCard key={i} summary={s.summary} editable={phase === "contact" && !busy} onEdit={editItem} delay={e.animate ? delays[i] : 0} />
+                ) : (
                   <li key={i} className={`ci-msg ci-${e.role}${e.muted ? " is-muted" : ""}`}>
                     {i === 0 && s.service && <span className="ci-tag">{s.service}</span>}
                     {e.role === "studio" ? (
@@ -365,192 +455,109 @@ export function Intake() {
                       e.text
                     )}
                   </li>
-                ))}
-                {thinking && <Thinking kind={thinking} />}
-              </ol>
-            )}
+                ),
+              )}
+              {thinking && <Thinking kind={thinking} />}
+            </ol>
 
-            {optionsVisible && s.question && (
-              <div className="ci-options" role="group" aria-label="Варианты ответа">
-                {s.question.options.map((o, i) => (
-                  <button key={o} type="button" style={{ animationDelay: `${i * 60}ms` }} onClick={() => answer(o)}>
-                    {o}
-                  </button>
-                ))}
-              </div>
-            )}
-
-            {(composing || s.phase === "dialog") && (
-              <form
-                className={`ci-bar${thinking || revealing ? " is-busy" : ""}`}
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  if (composing) start();
-                  else answer(draft);
-                }}
-              >
-                <textarea
-                  ref={input}
-                  rows={1}
-                  value={draft}
-                  maxLength={composing ? LIMITS.task : LIMITS.answer}
-                  aria-label={composing ? "Опишите задачу" : "Свой ответ"}
-                  placeholder={composing ? placeholder : "Или напишите свой ответ"}
-                  disabled={!composing && !answering}
-                  onFocus={() => setFocused(true)}
-                  onBlur={() => setFocused(false)}
-                  onChange={(e) => {
-                    setDraft(e.target.value);
-                    autosize(e.target);
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
-                      e.preventDefault();
-                      e.currentTarget.form?.requestSubmit();
-                    }
-                  }}
-                />
-                <button type="submit" disabled={!draft.trim() || !!thinking || (!composing && !answering)} aria-label="Отправить">
-                  <SendIcon />
-                </button>
-              </form>
-            )}
-
-            {composing && (
-              <div className="ci-chips" role="group" aria-label="Формат проекта">
-                {SERVICES.map((name) => (
-                  <button
-                    key={name}
-                    type="button"
-                    aria-pressed={s.service === name}
-                    onClick={() => setS((st) => ({ ...st, service: st.service === name ? null : name }))}
-                  >
-                    {name}
-                  </button>
-                ))}
-              </div>
-            )}
-
-            {s.phase === "dialog" && (
-              <div className="ci-actions">
-                <button type="button" className="ci-link" disabled={!answering || revealing} onClick={() => answer("")}>
-                  Пропустить вопрос
-                </button>
-                {s.answers.length > 0 && (
-                  <button type="button" className="ci-link" disabled={!answering || revealing} onClick={() => answer("", true)}>
-                    Сразу к итогу
-                  </button>
-                )}
-              </div>
-            )}
-
-            {s.phase === "summary" && s.summary && !revealing && (
-              <div className="ci-brief">
-                <div className="ci-card">
-                  <div className="ci-card-head">
-                    <h3>{s.summary.title}</h3>
-                    <button type="button" className="ci-link" onClick={() => setEditing((v) => !v)}>
-                      {editing ? "Готово" : "Изменить"}
+            <div className="ci-foot">
+              {phase === "dialog" && s.question && !busy && (
+                <div className="ci-options" role="group" aria-label="Варианты ответа">
+                  {s.question.options.map((o, i) => (
+                    <button key={o} type="button" style={{ animationDelay: `${i * 60}ms` }} onClick={() => answer(o)}>
+                      {o}
                     </button>
-                  </div>
-                  <dl>
-                    {s.summary.items.map((it, i) => (
-                      <div key={it.label}>
-                        <dt>{it.label}</dt>
-                        <dd>
-                          {editing ? (
-                            <textarea
-                              rows={1}
-                              value={it.value}
-                              aria-label={it.label}
-                              ref={autosize}
-                              onChange={(e) => {
-                                editItem(i, e.target.value);
-                                autosize(e.target);
-                              }}
-                            />
-                          ) : (
-                            it.value
-                          )}
-                        </dd>
-                      </div>
-                    ))}
-                  </dl>
+                  ))}
                 </div>
+              )}
+              {phase === "compose" && (
+                <div className="ci-chips" role="group" aria-label="Формат проекта">
+                  {SERVICES.map((name) => (
+                    <button
+                      key={name}
+                      type="button"
+                      aria-pressed={s.service === name}
+                      onClick={() => setS((st) => ({ ...st, service: st.service === name ? null : name }))}
+                    >
+                      {name}
+                    </button>
+                  ))}
+                </div>
+              )}
 
-                <form className="ci-contact" onSubmit={send} noValidate>
-                  <h3>Куда прислать оценку?</h3>
-                  {contacts.map((c, i) => {
-                    const kind = parsed[i]?.kind;
-                    return (
-                      <label key={i} className="ci-field">
-                        <span className="sr-only">Контакт {i + 1}</span>
-                        <input
-                          value={c}
-                          maxLength={LIMITS.contact}
-                          autoComplete={i === 0 ? "email" : "off"}
-                          placeholder="Email, @telegram или телефон"
-                          onChange={(e) => {
-                            const next = contacts.slice();
-                            next[i] = e.target.value;
-                            setContacts(next);
-                            setError("");
-                          }}
-                        />
-                        <span className={`ci-kind${kind ? " is-on" : ""}`}>{kind ? CONTACT_LABEL[kind] : " "}</span>
-                      </label>
-                    );
-                  })}
-                  {contacts.length < 3 && parsed[contacts.length - 1] && (
-                    <button type="button" className="ci-link" onClick={() => setContacts([...contacts, ""])}>
-                      + Еще способ связи
+              {phase !== "sent" ? (
+                <form className={`ci-bar${busy ? " is-busy" : ""}`} onSubmit={submit}>
+                  <textarea
+                    ref={input}
+                    rows={1}
+                    value={draft}
+                    maxLength={phase === "compose" ? LIMITS.task : phase === "contact" ? LIMITS.contact : LIMITS.answer}
+                    aria-label={phase === "compose" ? "Опишите задачу" : phase === "contact" ? "Email, Telegram или телефон" : "Свой ответ"}
+                    placeholder={
+                      phase === "compose" ? placeholder : phase === "contact" ? "Email, @telegram или телефон" : "Или напишите свой ответ"
+                    }
+                    autoComplete={phase === "contact" ? "email" : "off"}
+                    disabled={phase !== "compose" && busy}
+                    onFocus={() => setFocused(true)}
+                    onBlur={() => setFocused(false)}
+                    onChange={(e) => {
+                      setDraft(e.target.value);
+                      setHint("");
+                      autosize(e.target);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
+                        e.preventDefault();
+                        e.currentTarget.form?.requestSubmit();
+                      }
+                    }}
+                  />
+                  {detected.length > 0 && (
+                    <span className="ci-kind">{detected.map((c) => CONTACT_LABEL[c.kind]).join(" и ")}</span>
+                  )}
+                  <button type="submit" disabled={!draft.trim() || busy} aria-label="Отправить">
+                    <SendIcon />
+                  </button>
+                </form>
+              ) : (
+                <div className="ci-done">
+                  <span>Хотите обсудить еще одну задачу?</span>
+                  <button type="button" className="ci-link" onClick={restart}>
+                    Новый проект
+                  </button>
+                </div>
+              )}
+
+              {phase === "dialog" && (
+                <div className="ci-actions">
+                  <button type="button" className="ci-link" disabled={!s.question || busy} onClick={() => answer("")}>
+                    Пропустить вопрос
+                  </button>
+                  {s.answers.length > 0 && (
+                    <button type="button" className="ci-link" disabled={!s.question || busy} onClick={() => answer("", true)}>
+                      Сразу к итогу
                     </button>
                   )}
-                  <label className="ci-consent">
-                    <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} />
-                    <span>
-                      Согласен на обработку контактов для ответа по заявке
+                </div>
+              )}
+              {phase === "contact" && (
+                <p className={`ci-note${hint ? " is-error" : ""}`} role={hint ? "alert" : undefined}>
+                  {hint || (
+                    <>
+                      Отправляя контакт, вы соглашаетесь на его обработку для ответа по заявке
                       {PRIVACY_URL && (
                         <>
-                          {" "}
+                          {". "}
                           <a href={PRIVACY_URL} target="_blank" rel="noreferrer">
                             Политика
                           </a>
                         </>
                       )}
-                    </span>
-                  </label>
-                  <div className="ci-submit">
-                    <button type="submit" className="action action-primary" disabled={sending}>
-                      {sending ? "Отправляем" : "Отправить заявку"} <Arrow />
-                    </button>
-                    {sending && <ThinkingAtom size={26} />}
-                  </div>
-                  <p className="ci-error" role="alert">
-                    {error}
-                  </p>
-                </form>
-              </div>
-            )}
-
-            {s.phase === "sent" && s.summary && (
-              <div className="ci-done" role="status">
-                <span className="ci-done-mark" aria-hidden="true">
-                  <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8">
-                    <path d="m5 12.5 4.5 4.5L19 7.5" />
-                  </svg>
-                </span>
-                <div>
-                  <h3>{INTAKE_MOCK ? "Бриф собран" : "Заявка у нас"}</h3>
-                  <p>
-                    {INTAKE_MOCK
-                      ? "Тестовый режим: заявка сохранена в этом браузере и никуда не отправлена"
-                      : "Изучим задачу и напишем вам с оценкой и вопросами"}
-                  </p>
-                </div>
-              </div>
-            )}
-            <div ref={end} className="ci-end" />
+                    </>
+                  )}
+                </p>
+              )}
+            </div>
           </div>
         </div>
       </Container>

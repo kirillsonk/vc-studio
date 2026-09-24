@@ -30,3 +30,17 @@ export function collectContacts(values: string[]): Contacts {
   }
   return out;
 }
+
+/** One line may hold several contacts: "@name, name@mail.ru" or "почта ... или телефон ..." */
+export function splitContacts(raw: string): Array<{ kind: ContactKind; value: string }> {
+  const out: Array<{ kind: ContactKind; value: string }> = [];
+  const parts = raw.split(/[,;\n]|\s+(?:или|и|or)\s+/i);
+  for (const part of parts) {
+    const bare = part.trim().replace(/^[а-я\u0451\s:-]+(?=[@+\d(a-z])/i, "");
+    const words = bare.split(/\s+/);
+    // Labels like "телеграм @name" or "почта name@mail.ru": try the whole part, then each word
+    const hit = detectContact(bare) ?? words.map(detectContact).find(Boolean) ?? null;
+    if (hit && !out.some((c) => c.kind === hit.kind)) out.push(hit);
+  }
+  return out;
+}
