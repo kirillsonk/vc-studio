@@ -1,5 +1,5 @@
 {
-  "note": "Hero composition: the six letters of «сборка» float on a tilted orbit around an AI atom. Shared by the 3D scene (scene.ts) and the static fallback (scripts/build-symbol.mjs). Glyphs use letter-local coordinates, y up, 100 units tall. Commands: M x y, L x y, C x1 y1 x2 y2 x y, A cx cy rx ry fromDeg toDeg zAmplitude. A glyph may have several strokes",
+  "note": "Hero composition: the six letters of «сборка» float on a tilted orbit around an atom with a copper nucleus. Shared by the 3D scene (scene.ts) and the static fallback (scripts/build-symbol.mjs). Glyphs use letter-local coordinates, y up, 100 units tall. Commands: M x y, L x y, C x1 y1 x2 y2 x y, A cx cy rx ry fromDeg toDeg zAmplitude. A glyph may have several strokes",
   "glyphs": {
     "С": [
       [
@@ -206,20 +206,6 @@
           -14
         ]
       ]
-    ],
-    "I": [
-      [
-        [
-          "M",
-          0,
-          50
-        ],
-        [
-          "L",
-          0,
-          -50
-        ]
-      ]
     ]
   },
   "orbit": {
@@ -286,22 +272,8 @@
         "copper": true
       }
     ],
-    "core": {
-      "scale": 0.46,
-      "spread": 11,
-      "thick": 0.45,
-      "chars": [
-        {
-          "char": "А",
-          "x": -34,
-          "y": 0
-        },
-        {
-          "char": "I",
-          "x": 40,
-          "y": 0
-        }
-      ]
+    "nucleus": {
+      "radius": 19
     }
   }
 }

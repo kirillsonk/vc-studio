@@ -96,6 +96,17 @@ export function createVCScene(host: HTMLElement, canvas: HTMLCanvasElement) {
     ),
   );
   const placements = new Map<(typeof objects)[number], ReturnType<typeof placeAt>>();
+  // Nucleus: a small polished copper sphere at the center of the atom
+  const nucleusMaterial = new THREE.MeshStandardMaterial({
+    color: 0xbd542e,
+    metalness: 0.85,
+    roughness: 0.22,
+    envMapIntensity: 1.5,
+    transparent: true,
+  });
+  const nucleusGeometry = new THREE.SphereGeometry(1, 48, 32);
+  const nucleus = new THREE.Mesh(nucleusGeometry, nucleusMaterial);
+  scene.add(nucleus);
   const rotation = new THREE.Matrix4();
   const euler = new THREE.Euler();
   const point = new THREE.Vector3();
@@ -156,6 +167,20 @@ export function createVCScene(host: HTMLElement, canvas: HTMLCanvasElement) {
     scene.environmentRotation.y = Math.sin(phase * 0.18) * 0.16;
 
     for (const obj of objects) placements.set(obj, placeAt(obj, HERO, phase));
+
+    {
+      const morph = ease(clamp(progress * 1.14));
+      const fade = Math.max(0, 1 - morph * 1.8);
+      nucleus.visible = fade > 0;
+      point.set(0, 0, 0).applyMatrix4(rotation).multiplyScalar(scale);
+      nucleus.position.set(
+        point.x + originX,
+        point.y + originY + Math.sin(phase * 0.65) * 5 * scale * idle,
+        point.z,
+      );
+      nucleus.scale.setScalar(HERO.atom.nucleus.radius * scale * (1 + Math.sin(phase * 1.3) * 0.04));
+      nucleusMaterial.opacity = fade;
+    }
 
     ribbons.forEach(({ mesh, geometry, material, points, stroke, layer, obj, local, copper }) => {
       const { wave, primary } = stroke;
@@ -271,6 +296,8 @@ export function createVCScene(host: HTMLElement, canvas: HTMLCanvasElement) {
       geometry.dispose();
       material.dispose();
     });
+    nucleusGeometry.dispose();
+    nucleusMaterial.dispose();
     environment.dispose();
     renderer.dispose();
     renderer.forceContextLoss();

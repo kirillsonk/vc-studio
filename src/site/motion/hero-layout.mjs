@@ -10,7 +10,8 @@ function rotate2d([x, y, z], deg) {
 }
 
 /**
- * Objects: six orbiting letters, three atom rings, the "AI" core.
+ * Objects: six orbiting letters and three atom rings. The nucleus is a sphere,
+ * drawn separately by the scene and the SVG script.
  * Each stroke of each object later becomes 1 or 3 parallel ribbons (strands).
  */
 export function buildHero(spec, count) {
@@ -43,17 +44,6 @@ export function buildHero(spec, count) {
       strokes: [{ points: sampleStroke(cmds, 0, 0, count).map((p) => rotate2d(p, ring.rot)), primary: false, wave: i % 2 }],
     });
   });
-  const core = spec.atom.core;
-  objects.push({
-    kind: "core",
-    index: 0,
-    strands: 3,
-    spread: core.spread,
-    thick: core.thick,
-    strokes: core.chars.flatMap((c) =>
-      spec.glyphs[c.char].map((cmds) => ({ points: sampleStroke(cmds, c.x, c.y, count), primary: false, wave: 0 })),
-    ),
-  });
   return objects;
 }
 
@@ -75,11 +65,7 @@ export function placeAt(obj, spec, t) {
     };
   }
   const at = spec.atom;
-  if (obj.kind === "ring") {
-    return { x: 0, y: 0, z: 0, rx: at.tilt, ry: Math.sin(t * 0.3) * 0.45, rz: t * at.spin, scale: 1 };
-  }
-  // The core only sways, so "AI" stays legible while the rings spin around it
-  return { x: 0, y: 0, z: 0, rx: 0, ry: Math.sin(t * 0.4) * 0.3, rz: 0, scale: at.core.scale };
+  return { x: 0, y: 0, z: 0, rx: at.tilt, ry: Math.sin(t * 0.3) * 0.45, rz: t * at.spin, scale: 1 };
 }
 
 /** Local point -> composed space, same order in the scene and in the SVG script */

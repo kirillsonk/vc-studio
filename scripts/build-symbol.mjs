@@ -22,17 +22,20 @@ for (const obj of buildHero(spec, COUNT)) {
     }
   }
 }
-// Painter's order: far strands first
+// Painter's order: far strands first; the nucleus sits at depth 0
+strands.push({ nucleus: true, depth: 0 });
 strands.sort((a, b) => a.depth - b.depth);
+const [cx, cy] = [270, 250];
+const r = (spec.atom.nucleus.radius * 0.92).toFixed(1);
 const d = (pts) => "M" + pts.map(toSvg).map(([x, y]) => `${x.toFixed(1)} ${y.toFixed(1)}`).join(" ");
 
 const head = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 540 500" fill="none">\n';
-const defs = '<defs><linearGradient id="metal" x1="50" y1="80" x2="470" y2="420" gradientUnits="userSpaceOnUse"><stop stop-color="#373f3b"/><stop offset=".24" stop-color="#a3aaa0"/><stop offset=".38" stop-color="#f3f2e9"/><stop offset=".49" stop-color="#626e64"/><stop offset=".71" stop-color="#d2d7ca"/><stop offset="1" stop-color="#39443c"/></linearGradient><linearGradient id="copper"><stop stop-color="#8e341c"/><stop offset=".44" stop-color="#f1b28a"/><stop offset=".62" stop-color="#c94320"/><stop offset="1" stop-color="#913619"/></linearGradient><filter id="shadow" x="-30%" y="-30%" width="160%" height="170%"><feDropShadow dx="5" dy="12" stdDeviation="8" flood-color="#34382b" flood-opacity=".14"/></filter></defs>\n';
+const defs = '<defs><linearGradient id="metal" x1="50" y1="80" x2="470" y2="420" gradientUnits="userSpaceOnUse"><stop stop-color="#373f3b"/><stop offset=".24" stop-color="#a3aaa0"/><stop offset=".38" stop-color="#f3f2e9"/><stop offset=".49" stop-color="#626e64"/><stop offset=".71" stop-color="#d2d7ca"/><stop offset="1" stop-color="#39443c"/></linearGradient><linearGradient id="copper"><stop stop-color="#8e341c"/><stop offset=".44" stop-color="#f1b28a"/><stop offset=".62" stop-color="#c94320"/><stop offset="1" stop-color="#913619"/></linearGradient><radialGradient id="nucleus" cx=".35" cy=".3" r=".75"><stop stop-color="#f6c3a1"/><stop offset=".45" stop-color="#c94320"/><stop offset="1" stop-color="#7a2a14"/></radialGradient><filter id="shadow" x="-30%" y="-30%" width="160%" height="170%"><feDropShadow dx="5" dy="12" stdDeviation="8" flood-color="#34382b" flood-opacity=".14"/></filter></defs>\n';
 const g = (attrs, body) => `<g stroke-linecap="round" stroke-linejoin="round"${attrs}>\n${body}</g></svg>\n`;
 const w = (x) => x.toFixed(1);
 
 writeFileSync(new URL("../public/brand/sborka-symbol.svg", import.meta.url),
-  head + defs + g(' filter="url(#shadow)"', strands.map((s) => `<path d="${d(s.pts)}" stroke="url(#${s.copper ? "copper" : "metal"})" stroke-width="${w(s.width)}"/>\n`).join("")));
+  head + defs + g(' filter="url(#shadow)"', strands.map((s) => s.nucleus ? `<circle cx="${cx}" cy="${cy}" r="${r}" fill="url(#nucleus)" stroke="none"/>\n` : `<path d="${d(s.pts)}" stroke="url(#${s.copper ? "copper" : "metal"})" stroke-width="${w(s.width)}"/>\n`).join("")));
 writeFileSync(new URL("../public/brand/sborka-symbol-mono.svg", import.meta.url),
-  head + g("", strands.map((s) => `<path d="${d(s.pts)}" stroke="#111214" stroke-width="${w(s.width)}"/>\n`).join("")));
-console.log(`sborka-symbol.svg: ${strands.length} strands`);
+  head + g("", strands.map((s) => s.nucleus ? `<circle cx="${cx}" cy="${cy}" r="${r}" fill="#111214" stroke="none"/>\n` : `<path d="${d(s.pts)}" stroke="#111214" stroke-width="${w(s.width)}"/>\n`).join("")));
+console.log(`sborka-symbol.svg: ${strands.length - 1} strands and the nucleus`);

@@ -1,6 +1,6 @@
 export interface HeroStroke { points: Array<[number, number, number]>; primary: boolean; wave: number }
 export interface HeroObject {
-  kind: "letter" | "ring" | "core";
+  kind: "letter" | "ring";
   index: number;
   strands: 1 | 3;
   spread: number;

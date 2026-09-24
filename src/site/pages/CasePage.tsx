@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Container } from "../Chrome";
 import { Arrow } from "../Arrow";
-import { Playground } from "../sections/Cases";
+import { Playground } from "../game/Playground";
 export function CasePage() {
   return (
     <main id="main" className="case-page">

@@ -1,96 +1,51 @@
 "use client";
 import React from "react";
-import Link from "next/link";
 import { Container } from "../Chrome";
-import { Arrow } from "../Arrow";
-import { DeployRun } from "../game/DeployRun";
+import { Configurator } from "../demos/Configurator";
+import { Assistant } from "../demos/Assistant";
+
+const DEMOS = [
+  { id: "configurator", tab: "3D-конфигуратор", note: "Такие конфигураторы делаем для запусков и промо: товар в 3D, опции и цена в реальном времени" },
+  { id: "assistant", tab: "AI-ассистент", note: "Такого ассистента подключаем к вашим данным: он отвечает клиентам и передает заявки в CRM" },
+] as const;
+
 export function Cases() {
+  const [active, setActive] = React.useState(0);
+  const demo = DEMOS[active];
   return (
-    <section id="cases" className="editorial-section showcase-section">
+    <section id="cases" className="editorial-section">
       <Container>
         <div className="section-kicker">
           <span>Интерактивное демо</span>
         </div>
         <div className="section-heading">
           <h2>
-            Из посетителя
-            <br />в участника
+            Не рассказываем.
+            <br />
+            Показываем
           </h2>
-          <p>
-            Попробуйте короткую браузерную игру. Такие механики помогают
-            вовлекать аудиторию в запуск продукта, акцию или спецпроект
-          </p>
+          <p>Два рабочих примера того, что мы делаем для клиентов. Попробуйте прямо здесь</p>
         </div>
-        <Playground />
-        <div className="project-caption">
-          <div>
-            <h3>Deploy Run</h3>
-            <p>Браузерная игра · Эксперимент студии</p>
-          </div>
-          <Link href="/case" className="text-link">
-            Как это устроено <Arrow diagonal />
-          </Link>
+        <div className="econ-tabs demo-tabs" role="tablist" aria-label="Демо">
+          {DEMOS.map((d, i) => (
+            <button
+              key={d.id}
+              type="button"
+              role="tab"
+              className="econ-tab"
+              aria-selected={i === active}
+              aria-controls="demo-stage"
+              onClick={() => setActive(i)}
+            >
+              {d.tab}
+            </button>
+          ))}
         </div>
+        <div className="demo-stage" id="demo-stage" role="tabpanel" key={demo.id}>
+          {demo.id === "configurator" ? <Configurator /> : <Assistant />}
+        </div>
+        <p className="demo-note">{demo.note}</p>
       </Container>
     </section>
-  );
-}
-
-export function Playground() {
-  const [playing, setPlaying] = React.useState(false);
-  return (
-    <div className={`game-stage ${playing ? "is-playing" : ""}`}>
-      {playing ? (
-        <>
-          <DeployRun />
-          <button
-            className="game-close"
-            onClick={() => setPlaying(false)}
-            aria-label="Закрыть игру"
-          >
-            Закрыть <span aria-hidden="true">×</span>
-          </button>
-        </>
-      ) : (
-        <>
-          <div className="game-poster" aria-hidden="true">
-            <span className="poster-cross cross-one">+</span>
-            <span className="poster-cross cross-two">+</span>
-            <div className="poster-orbit orbit-one" />
-            <div className="poster-orbit orbit-two" />
-            <div className="poster-orbit orbit-three" />
-            <div className="poster-beam" />
-            <div className="poster-type">
-              deploy<span>run_</span>
-            </div>
-            <div className="poster-target">
-              <i />
-              <i />
-              <i />
-              <i />
-            </div>
-          </div>
-          <div className="game-poster-top">
-            <span>Сборка / Playground</span>
-            <span>Одна кнопка. Тридцать секунд</span>
-          </div>
-          <button
-            className="action action-light game-launch"
-            onClick={() => setPlaying(true)}
-          >
-            <svg
-              aria-hidden="true"
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="currentColor"
-            >
-              <path d="m8 5 11 7-11 7z" />
-            </svg>
-            Запустить игру
-          </button>
-        </>
-      )}
-    </div>
   );
 }
