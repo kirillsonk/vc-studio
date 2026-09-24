@@ -8,7 +8,7 @@ import { WhatWeDo } from '@/site/sections/WhatWeDo';
 import { Approach } from '@/site/sections/Approach';
 import { Economics } from '@/site/sections/Economics';
 import { Process } from '@/site/sections/Process';
-import { Agencies } from '@/site/sections/Agencies';
+import { Clients } from '@/site/sections/Clients';
 import { FAQ } from '@/site/sections/FAQ';
 import { Intake } from '@/site/sections/Intake';
 import { ScrollReveal } from '@/site/ScrollReveal';
@@ -29,7 +29,7 @@ function Home() {
       <Economics />
       <Cases />
       <Process />
-      <Agencies />
+      <Clients />
       <FAQ />
       <Intake />
       <FloatingContact />

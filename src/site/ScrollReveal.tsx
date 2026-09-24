@@ -18,7 +18,15 @@ export function ScrollReveal() {
               { opacity: 0.25, transform: "translateY(18px)" },
               { opacity: 1, transform: "translateY(0)" },
             ],
-            { duration: 650, easing: "cubic-bezier(.2,.7,.2,1)" },
+            {
+              duration: 650,
+              easing: "cubic-bezier(.2,.7,.2,1)",
+              // Cards that enter together follow one another instead of moving as a block
+              delay: entry.target.matches(".service-card")
+                ? Array.prototype.indexOf.call(entry.target.parentElement?.children ?? [], entry.target) * 80
+                : 0,
+              fill: "backwards",
+            },
           );
           animations.add(animation);
           if (entry.target.matches(".cost-comparison")) {
@@ -33,9 +41,9 @@ export function ScrollReveal() {
                 growth.onfinish = () => animations.delete(growth);
               });
           }
-          if (entry.target.matches(".process-list > li")) {
+          if (entry.target.matches(".process-list > li, .service-card")) {
             entry.target
-              .querySelectorAll<SVGPathElement>(".process-icon path")
+              .querySelectorAll<SVGPathElement>(".process-icon path, .service-icon path")
               .forEach((path, index) => {
                 const length = path.getTotalLength();
                 const trace = path.animate(
@@ -68,7 +76,7 @@ export function ScrollReveal() {
     );
     document
       .querySelectorAll(
-        ".section-heading, .vibe-definition, .approach-points article, .process-list > li, .service-row, .cost-comparison, .agency-panel",
+        ".section-heading, .vibe-definition, .approach-points article, .process-list > li, .service-card, .econ-board, .clients-tabs, .clients-panel",
       )
       .forEach((element) => {
         if (element.getBoundingClientRect().top >= window.innerHeight)

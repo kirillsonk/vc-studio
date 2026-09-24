@@ -5,7 +5,7 @@ export const HOME_SECTIONS: Array<[id: string, label: string]> = [
   ["what", "Что делаем"],
   ["approach", "Подход"],
   ["economics", "Стоимость"],
-  ["agencies", "Агентствам"],
+  ["clients", "С кем работаем"],
   ["cases", "Демо"],
 ];
 export const ROUTES = {

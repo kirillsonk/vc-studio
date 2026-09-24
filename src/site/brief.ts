@@ -1,11 +1,13 @@
 /** Local draft contract. Future AI and delivery adapters consume this shape. */
 export const SERVICES = [
   "Сайты и интернет-магазины",
+  "AI-ассистенты и агенты",
+  "MCP и AI-интеграции",
   "Веб-сервисы и личные кабинеты",
-  "Интерактив и спецпроекты",
-  "Автоматизация и интеграции",
+  "Интерактив, 3D и спецпроекты",
+  "Автоматизация процессов",
 ] as const;
-export const BRIEF_STORAGE_KEY = "vc-studio-brief-v3";
+export const BRIEF_STORAGE_KEY = "sborka-brief-v4";
 export interface BriefDraft {
   schemaVersion: 1;
   service: string;
@@ -47,5 +49,7 @@ export function readBrief(value: unknown): BriefDraft | null {
 }
 export function serviceFromQuery(search: string): string | null {
   const id = new URLSearchParams(search).get("service");
-  return id !== null && /^[0-3]$/.test(id) ? SERVICES[Number(id)] : null;
+  return id !== null && /^\d$/.test(id) && Number(id) < SERVICES.length
+    ? SERVICES[Number(id)]
+    : null;
 }

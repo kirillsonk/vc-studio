@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
-import MONOGRAM from "./monogram.json";
-import { sampleStroke } from "./strokes.mjs";
+import HERO from "./hero.json";
+import { applyPlacement, buildHero, offsetStroke, placeAt } from "./hero-layout.mjs";
 
 const clamp = (x: number) => Math.max(0, Math.min(1, x));
 const ease = (x: number) => x * x * (3 - 2 * x);
@@ -59,44 +59,43 @@ export function createVCScene(host: HTMLElement, canvas: HTMLCanvasElement) {
   light.position.set(-300, 400, 500);
   scene.add(light, new THREE.HemisphereLight(0xffffff, 0x62604c, 1.4));
 
-  // Monogram «СБ / ОР / КА», geometry in monogram.json. Each stroke becomes three
-  // parallel ribbons. On scroll only the first strokes of С and Б continue into the
-  // two background waves; the rest fade out so the background stays as calm as before.
-  const strokes = MONOGRAM.letters.flatMap((letter, li) =>
-    letter.strokes.map((cmds, si) => ({
-      points: sampleStroke(cmds, letter.x, letter.y, LENGTH).map(
-        ([x, y, z]) => new THREE.Vector3(x, y, z),
-      ),
-      primary: li < 2 && si === 0,
-      wave: li % 2,
-    })),
+  // Hero composition (hero.json): six letters of «сборка» orbit an AI atom.
+  // Every stroke becomes 1 or 3 parallel ribbons. On scroll only С and Б
+  // carry on into the two background waves; everything else fades out.
+  const objects = buildHero(HERO, LENGTH);
+  const ribbons = objects.flatMap((obj) =>
+    obj.strokes.flatMap((stroke) =>
+      Array.from({ length: obj.strands }, (_, k) => {
+        const layer = obj.strands === 3 ? k : 1;
+        const copper = obj.strands === 3 ? layer === 2 : Boolean(obj.copper);
+        const material = new THREE.MeshStandardMaterial({
+          color: copper ? 0xbd542e : 0xa6b0a7,
+          metalness: copper ? 0.8 : 1,
+          roughness: copper ? 0.24 : 0.2,
+          envMapIntensity: 1.4,
+          transparent: true,
+          side: THREE.DoubleSide,
+        });
+        const geometry = makeRibbon();
+        const mesh = new THREE.Mesh(geometry, material);
+        mesh.frustumCulled = false;
+        scene.add(mesh);
+        return {
+          mesh,
+          geometry,
+          material,
+          obj,
+          stroke,
+          layer,
+          copper,
+          // Strand offset is applied in the letter's own plane, before any 3D turn
+          local: offsetStroke(stroke.points, (layer - 1) * obj.spread),
+          points: Array.from({ length: LENGTH + 1 }, () => new THREE.Vector3()),
+        };
+      }),
+    ),
   );
-  const SPREAD = MONOGRAM.spread;
-  const ribbons = strokes.flatMap((stroke) =>
-    [0, 1, 2].map((layer) => {
-      const copper = layer === 2;
-      const material = new THREE.MeshStandardMaterial({
-        color: copper ? 0xbd542e : 0xa6b0a7,
-        metalness: copper ? 0.8 : 1,
-        roughness: copper ? 0.24 : 0.2,
-        envMapIntensity: 1.4,
-        transparent: true,
-        side: THREE.DoubleSide,
-      });
-      const geometry = makeRibbon();
-      const mesh = new THREE.Mesh(geometry, material);
-      mesh.frustumCulled = false;
-      scene.add(mesh);
-      return {
-        mesh,
-        geometry,
-        material,
-        stroke,
-        layer,
-        points: Array.from({ length: LENGTH + 1 }, () => new THREE.Vector3()),
-      };
-    }),
-  );
+  const placements = new Map<(typeof objects)[number], ReturnType<typeof placeAt>>();
   const rotation = new THREE.Matrix4();
   const euler = new THREE.Euler();
   const point = new THREE.Vector3();
@@ -147,39 +146,30 @@ export function createVCScene(host: HTMLElement, canvas: HTMLCanvasElement) {
     const originX = left + boxWidth / 2 - width / 2;
     const originY = height / 2 - (top - scroll + boxHeight / 2);
     const idle = 1 - progress;
+    // The composition moves on its own now, so the whole-scene sway stays small
     euler.set(
-      0.12 + Math.sin(phase * 0.42) * 0.07,
-      -0.3 + Math.sin(phase * 0.32) * 0.16,
-      -0.055 + Math.sin(phase * 0.28) * 0.025,
+      0.06 + Math.sin(phase * 0.42) * 0.04,
+      -0.1 + Math.sin(phase * 0.32) * 0.1,
+      Math.sin(phase * 0.28) * 0.02,
     );
     rotation.makeRotationFromEuler(euler);
     scene.environmentRotation.y = Math.sin(phase * 0.18) * 0.16;
 
-    ribbons.forEach(({ mesh, geometry, material, points, stroke, layer }) => {
+    for (const obj of objects) placements.set(obj, placeAt(obj, HERO, phase));
+
+    ribbons.forEach(({ mesh, geometry, material, points, stroke, layer, obj, local, copper }) => {
       const { wave, primary } = stroke;
-      const spread = (layer - 1) * SPREAD;
       const morph = ease(clamp(progress * 1.14 - layer * 0.065));
       // Secondary strokes are gone before the waves form; skip their geometry work entirely
       const fade = primary ? 1 : Math.max(0, 1 - morph * 1.8);
       mesh.visible = fade > 0;
       if (!mesh.visible) return;
-      const path = stroke.points;
+      const placement = placements.get(obj)!;
       for (let i = 0; i <= LENGTH; i++) {
         const t = i / LENGTH;
-        const base = path[i];
-        tangent
-          .subVectors(
-            path[Math.min(LENGTH, i + 1)],
-            path[Math.max(0, i - 1)],
-          )
-          .normalize();
-        normal.set(-tangent.y, tangent.x, 0).normalize();
+        const [px, py, pz] = applyPlacement(local[i], placement);
         point
-          .copy(base)
-          .addScaledVector(
-            normal,
-            spread,
-          )
+          .set(px, py, pz)
           .applyMatrix4(rotation)
           .multiplyScalar(scale);
         point.x += originX;
@@ -203,9 +193,9 @@ export function createVCScene(host: HTMLElement, canvas: HTMLCanvasElement) {
         "position",
       ) as THREE.BufferAttribute;
       const wide =
-        (layer === 2 ? 3.3 : 4.7) * scale * (1 - morph) +
+        (copper ? 3.3 : 4.7) * obj.thick * scale * (1 - morph) +
         (width < 651 ? 2.8 : 5) * morph;
-      const depth = 4.8 * scale * (1 - morph) + 3 * morph;
+      const depth = 4.8 * obj.thick * scale * (1 - morph) + 3 * morph;
       for (let i = 0; i <= LENGTH; i++) {
         tangent
           .subVectors(

@@ -2066,14 +2066,7 @@ svg {
 .process-list > li {
   padding: 28px 24px 0 0;
 }
-.process-list > li:not(:last-child):after {
-  content: "↗";
-  position: absolute;
-  top: 34px;
-  right: 32px;
-  font-size: 22px;
-  color: var(--text-2);
-}
+
 .process-icon {
   width: 52px;
   height: 52px;

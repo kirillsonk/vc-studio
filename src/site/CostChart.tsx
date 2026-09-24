@@ -1,178 +1,163 @@
 "use client";
-import { useState } from "react";
+import React from "react";
 
-const money = (value: number) =>
-  new Intl.NumberFormat("ru-RU").format(value) + " ₽";
-const MODELS = [
+const money = (value: number) => new Intl.NumberFormat("ru-RU").format(Math.round(value)) + " ₽";
+
+type Kind = "design" | "team" | "code";
+
+/** Same order in both bars: design, project work, code. Code goes last so the smallest studio segment sits at the end */
+const TOPICS: Array<{ id: Kind; label: string; regular: number; studio: number; regularName: string; studioName: string; note: string }> = [
   {
-    id: "agency",
-    name: "Обычная разработка",
-    formula: "100 часов × 5 000 ₽ / час",
-    parts: [
-      {
-        id: "agency-design",
-        name: "Дизайн",
-        value: 100000,
-        color: "design",
-        detail: "20 часов на структуру и дизайн интерфейса по ставке 5 000 ₽",
-      },
-      {
-        id: "agency-code",
-        name: "Разработка",
-        value: 350000,
-        color: "code",
-        detail:
-          "70 часов разработки по ставке 5 000 ₽. В этой модели оплачиваются часы специалиста",
-      },
-      {
-        id: "agency-support",
-        name: "Ведение и QA",
-        value: 50000,
-        color: "support",
-        detail: "10 часов на координацию, проверку и подготовку к запуску",
-      },
-    ],
+    id: "design",
+    label: "Дизайн",
+    regular: 100000,
+    studio: 30000,
+    regularName: "Дизайн, 20 часов",
+    studioName: "Дизайн",
+    note: "Варианты интерфейса собираем с AI, дизайнер выбирает лучшее и доводит до чистового",
   },
   {
-    id: "studio",
-    name: "Сборка",
-    formula: "Дизайн + сопровождение + токены AI",
-    parts: [
-      {
-        id: "studio-design",
-        name: "Дизайн",
-        value: 30000,
-        color: "design",
-        detail:
-          "Структура и интерфейс под вашу задачу. Дизайн остается отдельной частью проекта",
-      },
-      {
-        id: "studio-support",
-        name: "Сопровождение",
-        value: 60000,
-        color: "support",
-        detail:
-          "Основная часть нашей работы: постановка задач AI, технические решения, проверка кода и сценариев, правки и запуск",
-      },
-      {
-        id: "studio-code",
-        name: "Токены AI",
-        value: 10000,
-        color: "code",
-        detail:
-          "Расход AI на генерацию и доработку кода. За эту часть платите по расходу токенов, без почасовой ставки разработчика",
-      },
-    ],
+    id: "team",
+    label: "Ведение проекта",
+    regular: 50000,
+    studio: 60000,
+    regularName: "Ведение и QA",
+    studioName: "Сопровождение",
+    note: "Здесь наша основная работа: задачи для AI, архитектура, проверка кода и запуск",
+  },
+  {
+    id: "code",
+    label: "Код",
+    regular: 350000,
+    studio: 10000,
+    regularName: "Разработка, 70 часов",
+    studioName: "Токены AI",
+    note: "Код пишет AI. Платите за фактический расход токенов, а не за часы разработчика",
   },
 ];
-const max = MODELS[0].parts.reduce((sum, part) => sum + part.value, 0);
-const totalStudio = MODELS[1].parts.reduce((sum, part) => sum + part.value, 0);
-const parts = MODELS.flatMap((model) =>
-  model.parts.map((part) => ({ ...part, model: model.name })),
-);
+const ORDER: Kind[] = ["design", "team", "code"];
+const REGULAR = TOPICS.reduce((s, t) => s + t.regular, 0);
+const STUDIO = TOPICS.reduce((s, t) => s + t.studio, 0);
+
+/** Counts up once when shown; jumps straight to the value with reduced motion */
+function useCountUp(target: number, run: boolean, ms = 1100) {
+  const [value, setValue] = React.useState(target);
+  React.useEffect(() => {
+    if (!run) return;
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setValue(target);
+      return;
+    }
+    let frame = 0;
+    const t0 = performance.now();
+    const tick = (now: number) => {
+      const p = Math.min(1, (now - t0) / ms);
+      setValue(target * (1 - Math.pow(1 - p, 3)));
+      if (p < 1) frame = requestAnimationFrame(tick);
+    };
+    setValue(0);
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [target, run, ms]);
+  return value;
+}
 
 export function CostChart() {
-  const [selected, setSelected] = useState("studio-code");
-  const [preview, setPreview] = useState<string | null>(null);
-  const current = parts.find((part) => part.id === (preview ?? selected))!;
-  const events = (id: string) => ({
-    onMouseEnter: () => setPreview(id),
-    onMouseLeave: () => setPreview(null),
-    onFocus: () => setPreview(id),
-    onBlur: () => setPreview(null),
-    onClick: () => {
-      setSelected(id);
-      setPreview(null);
-    },
-  });
+  const root = React.useRef<HTMLDivElement>(null);
+  const [shown, setShown] = React.useState(false);
+  const [active, setActive] = React.useState<Kind>("code");
+
+  React.useEffect(() => {
+    const el = root.current;
+    if (!el || !("IntersectionObserver" in window)) return setShown(true);
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setShown(true);
+          io.disconnect();
+        }
+      },
+      { threshold: 0.35 },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
+  const regular = useCountUp(REGULAR, shown);
+  const studio = useCountUp(STUDIO, shown);
+  const saved = useCountUp(REGULAR - STUDIO, shown, 1400);
+  const topic = TOPICS.find((t) => t.id === active)!;
+
+  const bar = (which: "regular" | "studio") => (
+    <div className={`econ-bar${which === "studio" ? " econ-bar-studio" : ""}`} aria-hidden="true">
+      {ORDER.map((id) => {
+        const t = TOPICS.find((x) => x.id === id)!;
+        return (
+          <span
+            key={id}
+            className={`econ-seg econ-${id}`}
+            data-active={active === id}
+            style={{ width: shown ? `${(t[which] / REGULAR) * 100}%` : "0%" }}
+          />
+        );
+      })}
+    </div>
+  );
+
   return (
-    <figure
-      className="cost-chart"
-      aria-label="Условное сравнение расходов на один проект"
-    >
-      <p className="cost-chart-hint">
-        Выберите сегмент, чтобы увидеть состав расходов
-      </p>
-      {MODELS.map((model) => (
-        <div className="cost-row" key={model.id}>
-          <div className="cost-label">
-            <span>{model.name}</span>
-            <strong>
-              {money(model.parts.reduce((sum, part) => sum + part.value, 0))}
-            </strong>
-          </div>
-          <p className="cost-equation">{model.formula}</p>
-          <div
-            className="cost-stacked-track"
-            role="group"
-            aria-label={`Расходы: ${model.name}`}
+    <div className="econ-board" ref={root} data-shown={shown}>
+      <div className="econ-tabs" role="tablist" aria-label="Статья расходов">
+        {TOPICS.map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            role="tab"
+            aria-selected={active === t.id}
+            aria-controls="econ-note"
+            className={`econ-tab econ-${t.id}`}
+            onClick={() => setActive(t.id)}
           >
-            {model.parts.map((part) => (
-              <button
-                key={part.id}
-                type="button"
-                tabIndex={-1}
-                className={`cost-segment cost-${part.color}`}
-                style={{ width: `${(part.value / max) * 100}%` }}
-                data-active={current.id === part.id}
-                data-muted={current.color !== part.color}
-                aria-label={`${model.name}: ${part.name}, ${money(part.value)}`}
-                aria-pressed={selected === part.id}
-                aria-controls="cost-detail"
-                {...events(part.id)}
-              />
-            ))}
-          </div>
-          <div
-            className="cost-legend"
-            aria-label={`Статьи расходов: ${model.name}`}
-          >
-            {model.parts.map((part) => (
-              <button
-                key={part.id}
-                type="button"
-                className={`cost-legend-item cost-${part.color}`}
-                data-active={current.id === part.id}
-                data-muted={current.color !== part.color}
-                aria-pressed={selected === part.id}
-                aria-controls="cost-detail"
-                {...events(part.id)}
-              >
-                <span className="cost-dot" aria-hidden="true" />
-                <span>
-                  {part.name}
-                  <strong>{money(part.value)}</strong>
-                </span>
-              </button>
-            ))}
-          </div>
-        </div>
-      ))}
-      <div
-        id="cost-detail"
-        className={`cost-detail cost-${current.color}`}
-        aria-live="polite"
-        aria-atomic="true"
-      >
-        <div>
-          <span>
-            {current.model} / {current.name}
-          </span>
-          <strong>{money(current.value)}</strong>
-        </div>
-        <p>{current.detail}</p>
+            <span className="econ-dot" aria-hidden="true" />
+            {t.label}
+          </button>
+        ))}
       </div>
-      <div className="cost-saving">
-        <strong>×{max / totalStudio}</strong>
-        <div>
-          <span>меньше бюджет в этом примере</span>
-          <p>{money(max - totalStudio)} на другие задачи бизнеса</p>
+
+      <div className="econ-rows">
+        <div className="econ-row">
+          <div className="econ-name">
+            <span>Обычная разработка</span>
+            <small>100 часов по 5 000 ₽</small>
+          </div>
+          {bar("regular")}
+          <strong className="econ-total" data-num>{money(regular)}</strong>
+        </div>
+        <div className="econ-row">
+          <div className="econ-name">
+            <span>Сборка</span>
+            <small>Дизайн, сопровождение и токены AI</small>
+          </div>
+          {bar("studio")}
+          <strong className="econ-total econ-total-brand" data-num>{money(studio)}</strong>
         </div>
       </div>
-      <figcaption>
-        Условный расчет, не тариф и не средние цены рынка. Расход токенов и
-        стоимость сопровождения зависят от задачи
-      </figcaption>
-    </figure>
+
+      <div id="econ-note" className="econ-note" role="tabpanel" aria-live="polite">
+        <div className="econ-compare" data-num>
+          <span>{money(topic.regular)}</span>
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true"><path d="M4 12h15m-5-5 5 5-5 5" /></svg>
+          <strong>{money(topic.studio)}</strong>
+        </div>
+        <p key={topic.id}>{topic.note}</p>
+      </div>
+
+      <div className="econ-result">
+        <strong data-num>×{Math.round(REGULAR / STUDIO)}</strong>
+        <div>
+          <span data-num>{money(saved)} остаются на другие задачи</span>
+          <small>Условный пример, не тариф и не средние цены рынка</small>
+        </div>
+      </div>
+    </div>
   );
 }
