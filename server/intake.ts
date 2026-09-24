@@ -22,7 +22,8 @@ const questionTurn = z.object({
 }).strict();
 const summaryTurn = z.object({ type: z.literal("summary"), message: text(180), summary }).strict();
 export const modelSchema = z.object({
-  turn: z.discriminatedUnion("type", [questionTurn, summaryTurn]),
+  // A plain union emits anyOf, supported by OpenAI; Zod's discriminated union emits oneOf
+  turn: z.union([questionTurn, summaryTurn]),
   internal: z.object({
     clientType: z.enum(["agency", "business", "startup", "private", "unknown"]),
     complexity: z.enum(["low", "medium", "high", "unknown"]),

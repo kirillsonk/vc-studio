@@ -44,6 +44,8 @@ await test("model request excludes session and recognizable free-text contacts; 
   for (const secret of ["a@example.com", "@somebody", "999", req.sessionId, "test-key"]) assert.equal(input.includes(secret), false);
   assert.equal(sent.store, false);
   assert.equal(sent.text.format.strict, true);
+  assert.equal(JSON.stringify(sent.text.format.schema).includes('"oneOf"'), false);
+  assert.equal(sent.text.format.schema.properties.turn.anyOf.length, 2);
   assert.equal("internal" in result, false);
 });
 await test("forced or five-answer flow cannot receive another question", async () => {
