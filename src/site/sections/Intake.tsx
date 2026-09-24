@@ -155,7 +155,7 @@ function SummaryCard({
       </div>
       <dl>
         {summary.items.map((it, i) => (
-          <div key={it.label}>
+          <div key={`${it.label}-${i}`}>
             <dt>{it.label}</dt>
             <dd>
               {editing ? (

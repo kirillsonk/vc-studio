@@ -24,7 +24,7 @@ npm start
 
 ## AI-заявка
 
-`POST /api/intake/next` вызывает GPT-5.4 nano через Responses API и Structured Outputs. Максимум 5 вопросов, до 4 вариантов. Контракт: `src/site/intake/contract.ts`, сервер: `server/`. При сбое модели интерфейс продолжает на локальном сценарии
+`POST /api/intake/next` вызывает GPT-5.4 mini через Responses API и Structured Outputs. Максимум 5 вопросов, до 4 вариантов. Контракт: `src/site/intake/contract.ts`, сервер: `server/`. При сбое модели интерфейс продолжает на локальном сценарии
 
 Сейчас включена только подготовка брифа. Можно изменить и скопировать результат. Контакты не запрашиваются, `/submit` отвечает `503 delivery_not_configured`. Telegram и политика будут подключены отдельным этапом, решения владельца сохранены в `docs/intake-status.md`
 

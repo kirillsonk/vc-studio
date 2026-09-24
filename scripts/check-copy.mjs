@@ -36,21 +36,13 @@ async function walk(dir) {
   for (const entry of await readdir(dir, { withFileTypes: true })) {
     const file = path.join(dir, entry.name);
     if (entry.isDirectory()) await walk(file);
-    else if (/\.(tsx?|css|json)$/.test(file)) await scan(file);
+    else if (/\.(tsx?|css|json|md)$/.test(file)) await scan(file);
   }
 }
 await walk("src");
 await walk("server");
-for (const file of [
-  "BRAND.md",
-  "README.md",
-  "AGENTS.md",
-  "docs/intake-flow.md",
-  "docs/intake-api.md",
-  "docs/astra-intake-prompt.md",
-  "docs/intake-status.md",
-])
-  await scan(file);
+await walk("docs");
+for (const file of ["BRAND.md", "README.md", "AGENTS.md"]) await scan(file);
 if (violations.length) {
   console.error(violations.join("\n"));
   process.exitCode = 1;
