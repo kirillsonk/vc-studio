@@ -1889,6 +1889,15 @@ svg {
   overflow-wrap: anywhere;
   white-space: pre-wrap;
 }
+@media (max-width: 1100px) {
+  .approach-section .section-heading {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 24px;
+  }
+  .approach-section .section-heading > p {
+    max-width: 540px;
+  }
+}
 @media (max-width: 900px) {
   .approach-points {
     gap: 24px;
