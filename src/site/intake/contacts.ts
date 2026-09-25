@@ -44,10 +44,18 @@ export function extractContacts(raw: string): Array<{ kind: ContactKind; value: 
   const out: Array<{ kind: ContactKind; value: string }> = [];
   const email = /[a-z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-z0-9-]+(?:\.[a-z0-9-]+)+/gi;
   const withoutEmail = raw.replace(email, value => {const c=detectContact(value);if(c)out.push(c);return ' ';});
-  const matches = withoutEmail.match(/(?:https?:\/\/)?(?:t\.me|telegram\.me)\/[a-zA-Z][a-zA-Z0-9_]{4,31}|(?<![\w@])@[a-zA-Z][a-zA-Z0-9_]{4,31}\b|(?<!\d)(?:\+?\d[\s().-]*){10,15}(?!\d)/g) || [];
-  for (const value of matches) {
+  const telegram = withoutEmail.match(/(?:https?:\/\/)?(?:t\.me|telegram\.me)\/[^\s,;!?()<>]+|(?<![\w@])@[^\s,;!?()<>]+/gi) || [];
+  const phones = withoutEmail.replace(/(?:https?:\/\/)?(?:t\.me|telegram\.me)\/[^\s]+|@[^\s]+/gi, " ").match(/(?<!\d)(?:\+?\d[\s()-]*){10,15}(?!\d)/g) || [];
+  for (const value of [...telegram, ...phones]) {
     const hit=detectContact(value.trim());
     if(hit)out.push(hit);
   }
   return out.filter((c,i)=>out.findIndex(x=>x.kind===c.kind && x.value===c.value)===i);
+}
+
+/** A malformed explicit username must be corrected, including when another contact is valid */
+export function invalidTelegram(raw: string): boolean {
+  const withoutEmail = raw.replace(/[a-z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-z0-9-]+(?:\.[a-z0-9-]+)+/gi, " ");
+  const candidates = withoutEmail.match(/(?:https?:\/\/)?(?:t\.me|telegram\.me)\/[^\s,;!?()<>]+|(?<![\w@])@[^\s,;!?()<>]+/gi) || [];
+  return candidates.some(value => !detectContact(value));
 }

@@ -48,7 +48,14 @@ export interface Summary {
 
 export type NextResponse =
   | ({ type: "question" } & Question)
-  | { type: "summary"; message?: string; summary: Summary };
+  | { type: "summary"; message?: string; summary: Summary; assessment?: Assessment };
+
+export interface Assessment {
+  complexity: "low" | "medium" | "high" | "unknown";
+  notes: string;
+  nextMissing: string;
+}
+export type PhoneChannel = "call" | "whatsapp" | "telegram";
 
 export interface Contacts {
   email?: string;
@@ -66,6 +73,9 @@ export interface SubmitRequest {
   /** Summary after the client's edits */
   summary: Summary;
   contacts: Contacts;
+  contactConfirmed: true;
+  phoneChannel?: PhoneChannel;
+  assessment?: Assessment;
   /** Original final message, including any extra notes alongside the contact */
   contactNote?: string;
   consent: true;
@@ -73,4 +83,4 @@ export interface SubmitRequest {
   utm: Record<string, string>;
 }
 
-export type SubmitResponse = { ok: true; id: string } | { ok: false; error: string };
+export type SubmitResponse = { ok: true; id: string; number: number } | { ok: false; error: string };

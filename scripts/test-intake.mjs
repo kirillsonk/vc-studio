@@ -8,7 +8,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 const temp = await mkdtemp(join(tmpdir(), "sborka-test-"));
-await build({ entryPoints: ["server/intake.ts", "server/worker.ts", "server/telegram.ts", "src/site/intake/contacts.ts", "src/site/intake/mock.ts"], outdir: temp, entryNames:"[name]", bundle: true, format: "esm", platform: "node" });
+await build({ entryPoints: ["server/intake.ts", "server/worker.ts", "server/telegram.ts", "src/site/intake/contacts.ts", "src/site/intake/mock.ts", "src/site/demos/order-model.ts"], outdir: temp, entryNames:"[name]", bundle: true, format: "esm", platform: "node" });
 const { nextRequestSchema, generateNext, cleanCopy } = await import(pathToFileURL(join(temp, "intake.js")));
 const { handle, consumeLimit } = await import(pathToFileURL(join(temp, "worker.js")));
 const req = { schemaVersion: 1, sessionId: "test-session-123456", service: null, task: "Нужен сайт", answers: [], forceSummary: false };
@@ -101,7 +101,7 @@ await test("HTTP limits requests before OpenAI and stores no raw IP or task", as
 });
 const {deliverLead,submitSchema,leadMessages}=await import(pathToFileURL(join(temp,"telegram.js")));
 const {extractContacts}=await import(pathToFileURL(join(temp,"contacts.js")));
-const lead={schemaVersion:1,sessionId:"lead-test-session-123",service:null,task:"Нужен сайт",answers:[],summary:{title:"Сайт",items:[{label:"Задача",value:"Нужен сайт"}]},contacts:{email:"test@example.com"},consent:true,page:"https://site.example/",utm:{}};
+const lead={schemaVersion:1,sessionId:"lead-test-session-123",service:null,task:"Нужен сайт",answers:[],summary:{title:"Сайт",items:[{label:"Задача",value:"Нужен сайт"}]},contacts:{email:"test@example.com"},contactConfirmed:true,consent:true,page:"https://site.example/",utm:{}};
 await test("free text extracts explicit contacts without treating ordinary English as Telegram",()=>{
   assert.deepEqual(extractContacts("Website for product launch"),[]);
   const cs=extractContacts("Нужен сайт, почта test@example.com, пишите @sample_user или +7 (999) 123-45-67");
@@ -112,7 +112,7 @@ await test("free text extracts explicit contacts without treating ordinary Engli
 await test("confirmed delivery is idempotent under concurrent and repeated submissions",async()=>{
   const {env,db}=await database();Object.assign(env,{TELEGRAM_BOT_TOKEN:'test-token',TELEGRAM_CHAT_ID:'-123'});
   let sent=0;
-  const fetcher=async(url,opts)=>{sent++;const b=JSON.parse(opts.body);assert.equal(b.chat_id,'-123');assert.equal(b.parse_mode,undefined);return Response.json({ok:true,result:{message_id:sent}});};
+  const fetcher=async(url,opts)=>{sent++;const b=JSON.parse(opts.body);assert.equal(b.chat_id,'-123');assert.equal(b.parse_mode,'HTML');return Response.json({ok:true,result:{message_id:sent}});};
   await Promise.all([deliverLead(lead,env,fetcher),deliverLead(lead,env,fetcher)]);
   assert.equal((await deliverLead(lead,env,fetcher)).ok,true);assert.equal(sent,1);
   assert.equal((await deliverLead({...lead,task:'Другая задача'},env,fetcher)).error,'submission_conflict');
@@ -151,5 +151,44 @@ await test("fallback summary fits the delivery contract after long free-text ans
   const {mockSummary}=await import(pathToFileURL(join(temp,"mock.js")));
   const input={...req,task:"Нужен сайт ".repeat(700),answers:[{question:"Что уже есть к старту?",answer:"Материалы ".repeat(390)}]};
   assert.equal(submitSchema.safeParse({...lead,task:input.task,answers:input.answers,summary:mockSummary(input)}).success,true);
+});
+await test("contact review rejects unconfirmed contacts and phone without chosen channel",()=>{
+  assert.equal(submitSchema.safeParse({...lead,contactConfirmed:undefined}).success,false);
+  assert.equal(submitSchema.safeParse({...lead,contacts:{phone:'+79991234567'}}).success,false);
+  for(const phoneChannel of ['call','whatsapp','telegram'])assert.equal(submitSchema.safeParse({...lead,contacts:{phone:'+79991234567'},phoneChannel}).success,true);
+  for(const telegram of ['@sample_user.name','@sample_user-name','@'+'a'.repeat(33),'https://t.me/sample_user/post'])assert.deepEqual(extractContacts(telegram),[]);
+  assert.equal(extractContacts('Пишите https://t.me/sample_user')[0].value,'@sample_user');
+});
+await test("HTML receipts escape hostile content, keep user text and use stable short numbers",async()=>{
+  const unsafe={...lead,task:'<b>not markup</b> & _text_ '+ '😄&'.repeat(2200),contacts:{telegram:'@sample_user'},assessment:{complexity:'unknown',notes:'Уточнить материалы',nextMissing:'Срок'}};
+  const messages=leadMessages(unsafe,{number:7,created:1758794400});
+  const joined=messages.join('\n');
+  assert.ok(joined.includes('Заявка №007'));assert.ok(joined.includes('МСК'));
+  assert.ok(joined.includes('&lt;b&gt;not markup&lt;/b&gt; &amp; _text_'));
+  assert.ok(joined.includes('@sample_user'));assert.ok(!joined.includes(lead.page));assert.ok(!joined.includes(lead.sessionId));
+  for(const message of messages){assert.ok(message.length<=4096);assert.equal((message.match(/<b>/g)||[]).length,(message.match(/<\/b>/g)||[]).length);assert.ok(!/[\uD800-\uDBFF]$/.test(message));}
+  const {env,db}=await database();Object.assign(env,{TELEGRAM_BOT_TOKEN:'test',TELEGRAM_CHAT_ID:'-1'});
+  const fake=async()=>Response.json({ok:true,result:{message_id:1}});
+  const a=await deliverLead(lead,env,fake);const b=await deliverLead(lead,env,fake);
+  const c=await deliverLead({...lead,sessionId:'lead-other-session'},env,fake);
+  assert.equal(a.number,1);assert.equal(b.number,1);assert.equal(c.number,2);db.close();
+});
+await test("order reserves exact variants, cancellation restores once, preorder reserves nothing",async()=>{
+  const {initialShop,bottleProduct,DEFAULT_BOTTLE,placeOrder,cancelOrder,available,total}=await import(pathToFileURL(join(temp,'order-model.js')));
+  const product=bottleProduct(DEFAULT_BOTTLE);const lines=[{...product,quantity:2}];
+  const initial=initialShop();const ordered=placeOrder(initial,lines,'courier');
+  assert.equal(total(lines,'courier'),5170);assert.equal(available(ordered,product.id),1);assert.equal(available(initial,product.id),3);
+  lines[0].quantity=1;assert.equal(ordered.orders[0].lines[0].quantity,2);
+  const preorder=placeOrder(ordered,[{...product,quantity:4}],'pickup');assert.equal(preorder.orders[0].status,'preorder');assert.equal(available(preorder,product.id),1);
+  const cancelled=cancelOrder(preorder,1);assert.equal(available(cancelled,product.id),3);assert.deepEqual(cancelOrder(cancelled,1),cancelled);
+  assert.equal(available(cancelOrder(cancelled,2),product.id),3);
+  assert.equal(placeOrder(initial,[],'pickup'),initial);assert.equal(placeOrder(initial,[{...product,quantity:-1}],'pickup'),initial);
+});
+await test("submit HTTP endpoint requires review and returns a numbered receipt",async()=>{
+  const {env,db}=await database();Object.assign(env,{TELEGRAM_BOT_TOKEN:'test',TELEGRAM_CHAT_ID:'-1'});
+  let sends=0;const fake=async()=>{sends++;return Response.json({ok:true,result:{message_id:1}});};
+  const submit=body=>new Request('https://site.example/api/intake/submit',{method:'POST',headers:{Origin:'https://site.example','Content-Type':'application/json','CF-Connecting-IP':'192.0.2.5'},body:JSON.stringify(body)});
+  assert.equal((await handle(submit({...lead,contactConfirmed:false}),env,fake)).status,400);assert.equal(sends,0);
+  const response=await handle(submit(lead),env,fake);assert.equal(response.status,200);assert.equal((await response.json()).number,1);assert.equal(sends,1);db.close();
 });
 await rm(temp, { recursive: true, force: true });

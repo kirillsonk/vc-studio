@@ -2,13 +2,7 @@
 import React from "react";
 import type { BottleOptions } from "./bottle-scene";
 
-const COLORS = [
-  { id: "graphite", name: "Графит", value: "#2b2d31" },
-  { id: "chalk", name: "Мел", value: "#e8e5dd" },
-  { id: "vermilion", name: "Вермильон", value: "#c94320" },
-  { id: "sage", name: "Шалфей", value: "#8d9a87" },
-  { id: "sand", name: "Песок", value: "#c8b393" },
-];
+import { COLORS, type BottleSelection } from "./order-model";
 const SIZES = [
   { id: "500", name: "500 мл", price: 1990 },
   { id: "750", name: "750 мл", price: 2390 },
@@ -42,13 +36,13 @@ function useTween(target: number) {
   return shown;
 }
 
-export function Configurator() {
+export function Configurator({selection,onChange,onAdd}:{selection:BottleSelection;onChange:(value:BottleSelection)=>void;onAdd:()=>void}) {
   const host = React.useRef<HTMLDivElement>(null);
   const canvas = React.useRef<HTMLCanvasElement>(null);
   const scene = React.useRef<{ update: (o: BottleOptions) => void; dispose: () => void } | null>(null);
-  const [color, setColor] = React.useState(COLORS[0]);
-  const [size, setSize] = React.useState<(typeof SIZES)[number]>(SIZES[1]);
-  const [cap, setCap] = React.useState<(typeof CAPS)[number]>(CAPS[0]);
+  const color = COLORS.find(c=>c.id===selection.color)!;
+  const size = SIZES.find(s=>s.id===selection.size)!;
+  const cap = CAPS.find(c=>c.id===selection.cap)!;
   const [ready, setReady] = React.useState(false);
 
   const options: BottleOptions = { color: color.value, size: size.id, cap: cap.id };
@@ -102,7 +96,7 @@ export function Configurator() {
                 style={{ "--swatch": c.value } as React.CSSProperties}
                 aria-label={c.name}
                 aria-pressed={c.id === color.id}
-                onClick={() => setColor(c)}
+                onClick={() => onChange({...selection,color:c.id})}
               />
             ))}
           </div>
@@ -111,7 +105,7 @@ export function Configurator() {
           <legend>Объем</legend>
           <div className="segmented">
             {SIZES.map((s) => (
-              <button key={s.id} type="button" aria-pressed={s.id === size.id} onClick={() => setSize(s)}>
+              <button key={s.id} type="button" aria-pressed={s.id === size.id} onClick={() => onChange({...selection,size:s.id})}>
                 {s.name}
               </button>
             ))}
@@ -121,7 +115,7 @@ export function Configurator() {
           <legend>Крышка</legend>
           <div className="segmented">
             {CAPS.map((c) => (
-              <button key={c.id} type="button" aria-pressed={c.id === cap.id} onClick={() => setCap(c)}>
+              <button key={c.id} type="button" aria-pressed={c.id === cap.id} onClick={() => onChange({...selection,cap:c.id})}>
                 {c.name}
               </button>
             ))}
@@ -130,6 +124,7 @@ export function Configurator() {
         <div className="configurator-price">
           <strong data-num>{money(price)}</strong>
           <span>Цена пересчитывается сразу</span>
+          <button type="button" className="order-primary" onClick={onAdd}>В корзину <span aria-hidden="true">↗</span></button>
         </div>
       </div>
     </div>

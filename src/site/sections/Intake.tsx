@@ -4,9 +4,9 @@ import { Container } from "../Chrome";
 import { Arrow } from "../Arrow";
 import { STUDIO_EMAIL, STUDIO_TELEGRAM } from "../constants";
 import { SERVICES, serviceFromQuery } from "../brief";
-import { LIMITS, MAX_QUESTIONS, type Answer, type Question, type Summary } from "../intake/contract";
+import { LIMITS, MAX_QUESTIONS, type Answer, type Question, type Summary, type Assessment, type Contacts, type PhoneChannel } from "../intake/contract";
 import { deliveryAvailable, INTAKE_MOCK, PRIVACY_URL, nextStep, submitBrief } from "../intake/client";
-import { CONTACT_LABEL, collectContacts, splitContacts, extractContacts } from "../intake/contacts";
+import { CONTACT_LABEL, collectContacts, splitContacts, extractContacts, invalidTelegram } from "../intake/contacts";
 import { ThinkingAtom } from "../intake/ThinkingAtom";
 
 const STORAGE_KEY = "sborka-intake-v3";
@@ -26,7 +26,7 @@ const THINKING = {
 };
 
 type Entry = { role: "client" | "studio"; text: string; kind?: "summary"; muted?: boolean; animate?: boolean };
-type Phase = "compose" | "dialog" | "contact" | "sent";
+type Phase = "compose" | "dialog" | "contact" | "review" | "sent";
 interface State {
   phase: Phase;
   sessionId: string;
@@ -36,6 +36,8 @@ interface State {
   entries: Entry[];
   question: Question | null;
   summary: Summary | null;
+  assessment?: Assessment;
+  review?: {contacts: Contacts; note: string; phoneChannel?: PhoneChannel};
 }
 const initial = (): State => ({
   phase: "compose",
@@ -282,9 +284,9 @@ export function Intake() {
       setS((st) => ({ ...st, entries: next(st.entries), question: { question: res.question, options: res.options } }));
     } else {
       added.push({ role: "studio", text: "", kind: "summary", animate: true });
-      added.push({ role: "studio", text: extractContacts([base.task, ...base.answers.map(a => a.answer)].join("\n")).length ? "Контакт уже есть в переписке. Проверьте бриф и отправьте заявку" : CONTACT_QUESTION, animate: true });
+      added.push({ role: "studio", text: extractContacts([base.task, ...base.answers.map(a => a.answer)].join("\n")).length ? "Контакт уже есть в переписке. Проверьте бриф, затем подтвердите данные для связи" : CONTACT_QUESTION, animate: true });
       const next = push(added);
-      setS((st) => ({ ...st, entries: next(st.entries), question: null, summary: res.summary, phase: "contact" }));
+      setS((st) => ({ ...st, entries: next(st.entries), question: null, summary: res.summary, assessment: res.assessment, phase: "contact" }));
     }
   };
 
@@ -315,20 +317,33 @@ export function Intake() {
     ask(next, force);
   };
 
-  const sendContact = async () => {
+  const reviewContact = () => {
     if (!s.summary || thinking || revealing) return;
-    const found = draft.trim() ? splitContacts(draft) : knownContacts;
-    if (!found.length) {
-      setHint("Не похоже на email, Telegram или телефон. Проверьте, пожалуйста");
+    const raw = draft.trim() || knownContacts.map(c => c.value).join(", ");
+    if (invalidTelegram(raw)) {
+      setHint("Проверьте Telegram: в нике допустимы латинские буквы, цифры и знак _. Точки внутри ника не подходят. Скопируйте @ник из профиля");
       return;
     }
+    const found = splitContacts(raw);
+    if (!found.length) { setHint("Не похоже на email, Telegram или телефон. Проверьте, пожалуйста"); return; }
+    setHint("");
+    setS(st => ({...st, phase:"review", review:{contacts:collectContacts(found.map(c=>c.value)),note:raw}}));
+  };
+
+  const sending = React.useRef(false);
+  const sendContact = async () => {
+    if (!s.summary || !s.review || thinking || revealing || sending.current) return;
+    if (s.review.contacts.phone && !s.review.phoneChannel) {setHint("Выберите, как связаться по номеру");return;}
+    sending.current = true;
+    const {contacts, note, phoneChannel} = s.review;
     const available = deliveryEnabled || await deliveryAvailable();
     setDeliveryEnabled(available);
     if (!available) {
       setHint("Отправка временно недоступна. Бриф и контакт останутся в этой вкладке, попробуйте позже");
+      sending.current = false;
       return;
     }
-    const text = draft.trim() || found.map(c => c.value).join(", ");
+    const text = note;
     setHint("");
     setDraft("");
     setS((st) => ({ ...st, entries: [...st.entries.map(({ animate, ...e }) => e), { role: "client", text }] }));
@@ -340,21 +355,25 @@ export function Intake() {
       task: s.task,
       answers: s.answers,
       summary: s.summary,
-      contacts: collectContacts(found.map((c) => c.value)),
-      contactNote: draft.trim(),
+      contacts,
+      contactNote: note,
+      contactConfirmed: true,
+      phoneChannel,
+      assessment: s.assessment,
       consent: true,
       page: location.href,
       utm: Object.fromEntries([...new URLSearchParams(location.search)].filter(([k]) => k.startsWith("utm_"))),
     });
     setThinking(null);
+    sending.current = false;
     if (res.ok) {
-      const where = found[0].kind === "telegram" ? "в Telegram" : found[0].kind === "email" ? "на почту" : "по телефону";
+      const where = contacts.phone ? ({call:"по телефону",whatsapp:"в WhatsApp",telegram:"в Telegram"}[phoneChannel!]) : contacts.telegram ? "в Telegram" : "на почту";
       const next = push([
         {
           role: "studio",
           text: INTAKE_MOCK
             ? "Готово, бриф собран. Сейчас сайт в тестовом режиме, поэтому заявка пока никуда не ушла"
-            : `Готово, бриф у нас. Свяжемся ${where} с оценкой и вопросами`,
+            : `Заявка №${String(res.number).padStart(3,"0")} у нас. Свяжемся ${where} с оценкой и вопросами`,
           animate: true,
         },
       ]);
@@ -412,8 +431,8 @@ export function Intake() {
           ? "Разберет задачу и соберет бриф"
           : phase === "dialog"
             ? "Уточняет детали"
-            : phase === "contact"
-              ? "Бриф готов"
+            : (phase === "contact" || phase === "review")
+              ? "Проверяем контакты"
               : INTAKE_MOCK
                 ? "Бриф собран"
                 : "Бриф отправлен";
@@ -422,7 +441,7 @@ export function Intake() {
     e.preventDefault();
     if (phase === "compose") start();
     else if (phase === "dialog" && answerText.trim()) answer(answerText);
-    else if (phase === "contact") sendContact();
+    else if (phase === "contact") reviewContact();
   };
 
   return (
@@ -518,7 +537,16 @@ export function Intake() {
                 </div>
               )}
 
-              {phase !== "sent" ? (
+              {phase === "review" && s.review ? (
+                <div className="ci-review">
+                  <h3>Все верно?</h3>
+                  <p>Проверьте каждый символ. По этим данным мы свяжемся с вами</p>
+                  <dl>{Object.entries(s.review.contacts).map(([kind,value]) => <div key={kind}><dt>{CONTACT_LABEL[kind as keyof Contacts]}</dt><dd>{value}</dd></div>)}</dl>
+                  {s.review.contacts.phone && <fieldset><legend>Как связаться по номеру?</legend><div className="ci-options">{([["call","Позвонить"],["whatsapp","WhatsApp"],["telegram","Telegram"]] as const).map(([id,label]) => <button type="button" key={id} disabled={busy} aria-pressed={s.review?.phoneChannel === id} onClick={() => {setHint("");setS(st => ({...st,review:st.review && {...st.review,phoneChannel:id}}));}}>{label}</button>)}</div>{s.review.phoneChannel === "telegram" && <p>Проверьте, что в Telegram вас можно найти по номеру. Или укажите @ник через «Изменить контакт»</p>}</fieldset>}
+                  <button type="button" className="order-primary" onClick={sendContact} disabled={busy || (!!s.review.contacts.phone && !s.review.phoneChannel)}>Все верно, отправить заявку</button>
+                  <button type="button" className="ci-link" disabled={busy} onClick={() => {setDraft(s.review!.note);setHint("");setS(st=>({...st,phase:"contact",review:undefined}));}}>Изменить контакт</button>
+                </div>
+              ) : phase !== "sent" ? (
                 <form className={`ci-bar${busy ? " is-busy" : ""}${phase === "contact" ? " ci-bar-contact" : ""}`} onSubmit={submit}>
                   <div className="ci-input">
                   {phase === "compose" && !draft && <>
@@ -550,8 +578,8 @@ export function Intake() {
                   {detected.length > 0 && (
                     <span className="ci-kind">{detected.map((c) => CONTACT_LABEL[c.kind]).join(" и ")}</span>
                   )}
-                  <button type="submit" disabled={(!(phase === "dialog" ? answerText.trim() : draft.trim()) && !(phase === "contact" && knownContacts.length)) || busy || length > limit} aria-label={phase === "contact" ? "Отправить заявку" : "Отправить"}>
-                    {phase === "contact" && <span>Отправить заявку</span>}
+                  <button type="submit" disabled={(!(phase === "dialog" ? answerText.trim() : draft.trim()) && !(phase === "contact" && knownContacts.length)) || busy || length > limit} aria-label={phase === "contact" ? "Проверить контакт" : "Отправить"}>
+                    {phase === "contact" && <span>Проверить контакт</span>}
                     <SendIcon />
                   </button>
                 </form>
@@ -564,7 +592,7 @@ export function Intake() {
                 </div>
               )}
 
-              {phase !== "sent" && <div className="ci-input-meta">
+              {phase !== "sent" && phase !== "review" && <div className="ci-input-meta">
                 <span>{phase === "dialog" ? "Можно выбрать несколько и дополнить текстом" : "Enter добавляет новую строку"}</span>
                 <span id="intake-counter" className={length >= limit ? "is-limit" : ""}>{length.toLocaleString("ru-RU")} / {limit.toLocaleString("ru-RU")}{length >= limit ? " · Лимит" : ""}</span>
               </div>}
@@ -583,7 +611,7 @@ export function Intake() {
               {phase === "compose" && <p className="ci-note">Можно сразу добавить контакт для связи. Заявку отправим после вашего подтверждения</p>}
               {phase === "contact" && knownContacts.length > 0 && <p className="ci-note">Для связи: {knownContacts.map(c => c.value).join(", ")}</p>}
               {phase === "dialog" && hint && <p className="ci-note is-error" role="alert">{hint}</p>}
-              {phase === "contact" && (
+              {(phase === "contact" || phase === "review") && (
                 <p className={`ci-note${hint ? " is-error" : ""}`} role={hint ? "alert" : undefined}>
                   {hint || (
                     <>
