@@ -20,7 +20,7 @@ const TOPICS: Array<{ id: Kind; label: string; regular: number; studio: number; 
     id: "team",
     label: "Ведение проекта",
     regular: 50000,
-    studio: 60000,
+    studio: 58000,
     regularName: "Ведение и QA",
     studioName: "Сопровождение",
     note: "Здесь наша основная работа: задачи для AI, архитектура, проверка кода и запуск",
@@ -28,9 +28,9 @@ const TOPICS: Array<{ id: Kind; label: string; regular: number; studio: number; 
   {
     id: "code",
     label: "Код",
-    regular: 350000,
-    studio: 10000,
-    regularName: "Разработка, 70 часов",
+    regular: 335000,
+    studio: 9000,
+    regularName: "Разработка, 67 часов",
     studioName: "Токены AI",
     note: "Код пишет AI. Платите за фактический расход токенов, а не за часы разработчика",
   },
@@ -120,13 +120,14 @@ export function CostChart() {
             type="button"
             aria-pressed={active === t.id}
             aria-controls="econ-note"
+            aria-label={t.label}
             className={`econ-tab econ-${t.id}`}
             onClick={() => setActive(t.id)}
             onPointerEnter={e => { if (e.pointerType === "mouse") setActive(t.id); }}
             onFocus={() => setActive(t.id)}
           >
             <span className="econ-dot" aria-hidden="true" />
-            {t.label}
+            {t.id === "team" ? <><span className="econ-label-full" aria-hidden="true">{t.label}</span><span className="econ-label-short" aria-hidden="true">Ведение</span></> : t.label}
           </button>
         ))}
       </div>
@@ -135,7 +136,7 @@ export function CostChart() {
         <div className="econ-row">
           <div className="econ-name">
             <span>Обычная разработка</span>
-            <small>100 часов по 5 000 ₽</small>
+            <small>97 часов по 5 000 ₽</small>
           </div>
           {bar("regular")}
           <strong className="econ-total" data-num>{money(regular)}</strong>

@@ -828,11 +828,17 @@
 #intake-counter { margin-left: auto; white-space: nowrap; font-variant-numeric: tabular-nums; }
 #intake-counter.is-limit { color: var(--brand); }
 @media (max-width: 650px) {
-  #economics .econ-tabs { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; flex-wrap: nowrap; width: 100%; gap: 2px; }
+  #economics .econ-tabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); flex-wrap: nowrap; width: 100%; gap: 2px; }
   #economics .econ-tab { justify-content: center; gap: 6px; padding: 10px 8px; white-space: nowrap; font-size: 14px; min-height: 44px; }
   #economics .econ-dot { width: 6px; height: 6px; flex-shrink: 0; }
 }
 @media (max-width: 380px) {
   #economics .econ-tab { padding-inline: 5px; font-size: 13px; gap: 4px; }
   #economics .econ-dot { display: none; }
+}
+
+.econ-label-short { display: none; }
+@media (max-width: 650px) {
+  #economics .econ-label-full { display: none; }
+  #economics .econ-label-short { display: inline; }
 }
