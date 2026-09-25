@@ -85,7 +85,7 @@ const Q = {
   },
   budget: {
     question: "Есть ориентир по бюджету?",
-    options: ["До 200 тыс ₽", "200-500 тыс ₽", "Больше 500 тыс ₽", "Сначала хочу оценку"],
+    options: ["Есть ориентир, напишу", "Сначала нужна оценка", "Обсудим после выбора решения"],
   },
   reference: {
     question: "Есть пример, на который хочется равняться?",
@@ -120,7 +120,12 @@ function plan(req: NextRequest): Question[] {
   const client = detectClient(all);
   const list: Question[] = [];
   if (!client) list.push(Q.client);
-  list.push(format ? Q[format] : Q.format);
+  const detailKnown = format === "site" ? /figma|макет|дизайн|фирстил|с нуля|wordpress/i.test(all)
+    : format === "ai" ? /telegram|телеграм|на сайте|внутри компании/i.test(all)
+    : format === "integration" ? /(amo|CRM|1С|битрикс).*(сайт|wordpress|telegram|CRM|1С)|сайт.*(amo|CRM|1С|битрикс)/i.test(all)
+    : format === "service" ? /клиент|сотрудник|дилер|партнер|покупател/i.test(all)
+    : false;
+  if (!detailKnown) list.push(format ? Q[format] : Q.format);
   if (!/срок|недел|месяц|дедлайн|к \d|до \d|осен|весн|лет[оа]|зим|январ|феврал|март|апрел|ма[йя]|июн|июл|август|сентябр|октябр|ноябр|декабр/i.test(all))
     list.push(Q.deadline);
   if (!/бюджет|₽|руб|тыс|млн|\d+\s?k\b/i.test(all)) list.push(Q.budget);
@@ -142,7 +147,7 @@ export function mockSummary(req: NextRequest): Summary {
       .map((a) => ({ label: LABEL[a.question] || a.question.replace(/\?$/, ""), value: a.answer })),
     { label: "Срок", value: pick(Q.deadline) },
     { label: "Бюджет", value: pick(Q.budget) },
-  ].filter((i) => i.value);
+  ].filter((i) => i.value).map(i => ({ ...i, value: i.value.slice(0, LIMITS.summaryValue) })).slice(0, 8);
   const what = format ? FORMAT_LABEL[format] : "Проект";
   const whom = client === "agency" ? " для клиента агентства" : client === "startup" ? " для стартапа" : "";
   return { title: what + whom, items };

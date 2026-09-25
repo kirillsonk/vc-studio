@@ -184,6 +184,7 @@ export function Intake() {
   const [s, setS] = React.useState<State>(initial);
   const [deliveryEnabled, setDeliveryEnabled] = React.useState(false);
   React.useEffect(() => { let active=true; deliveryAvailable().then(value => { if(active)setDeliveryEnabled(value); }); return () => {active=false;}; }, []);
+  const [selected, setSelected] = React.useState<string[]>([]);
   const [draft, setDraft] = React.useState("");
   const [thinking, setThinking] = React.useState<null | keyof typeof THINKING>(null);
   const [revealing, setRevealing] = React.useState(false);
@@ -199,7 +200,12 @@ export function Intake() {
   React.useEffect(() => {
     try {
       const saved = JSON.parse(sessionStorage.getItem(STORAGE_KEY) || "null");
-      if (saved?.sessionId && saved.phase) setS({ ...initial(), ...saved });
+      if (saved?.sessionId && saved.phase) {
+        const { draft: storedDraft, selected: storedSelected, ...state } = saved;
+        setS({ ...initial(), ...state });
+        if (typeof storedDraft === "string") setDraft(storedDraft);
+        if (Array.isArray(storedSelected)) setSelected(storedSelected.filter(v => typeof v === "string"));
+      }
     } catch {}
     const pick = (search: string) => {
       const service = serviceFromQuery(search);
@@ -225,9 +231,9 @@ export function Intake() {
   React.useEffect(() => {
     if (!ready) return;
     try {
-      sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ ...s, entries: s.entries.map(({ animate, ...e }) => e) }));
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ ...s, draft, selected, entries: s.entries.map(({ animate, ...e }) => e) }));
     } catch {}
-  }, [s, ready]);
+  }, [s, ready, draft, selected]);
 
   React.useEffect(() => {
     const el=input.current;
@@ -276,15 +282,15 @@ export function Intake() {
       setS((st) => ({ ...st, entries: next(st.entries), question: { question: res.question, options: res.options } }));
     } else {
       added.push({ role: "studio", text: "", kind: "summary", animate: true });
-      added.push({ role: "studio", text: deliveryEnabled ? (extractContacts([base.task, ...base.answers.map(a => a.answer)].join("\n")).length ? "Контакт уже есть в переписке. Проверьте бриф и отправьте заявку" : CONTACT_QUESTION) : "Бриф готов, его можно изменить и скопировать", animate: true });
+      added.push({ role: "studio", text: extractContacts([base.task, ...base.answers.map(a => a.answer)].join("\n")).length ? "Контакт уже есть в переписке. Проверьте бриф и отправьте заявку" : CONTACT_QUESTION, animate: true });
       const next = push(added);
       setS((st) => ({ ...st, entries: next(st.entries), question: null, summary: res.summary, phase: "contact" }));
     }
   };
 
   const start = () => {
-    const task = draft.trim().slice(0, LIMITS.task);
-    if (!task || thinking) return;
+    const task = draft.trim();
+    if (!task || task.length > LIMITS.task || thinking) return;
     const next: State = { ...s, phase: "dialog", task, entries: [{ role: "client", text: task }] };
     setS(next);
     setDraft("");
@@ -294,7 +300,9 @@ export function Intake() {
 
   const answer = (text: string, force = false) => {
     if (!s.question || thinking || revealing) return;
-    const value = text.trim().slice(0, LIMITS.answer);
+    const value = text.trim();
+    if (value.length > LIMITS.answer) { setHint("Ответ слишком длинный. Сократите его перед отправкой"); return; }
+    setSelected([]);
     const next: State = {
       ...s,
       question: null,
@@ -308,13 +316,17 @@ export function Intake() {
   };
 
   const sendContact = async () => {
-    if (!deliveryEnabled || !s.summary || thinking || revealing) return;
+    if (!s.summary || thinking || revealing) return;
     const found = draft.trim() ? splitContacts(draft) : knownContacts;
     if (!found.length) {
       setHint("Не похоже на email, Telegram или телефон. Проверьте, пожалуйста");
       return;
     }
-    const text = (draft.trim() || found.map(c => c.value).join(", ")).slice(0, LIMITS.contact);
+    if (!deliveryEnabled) {
+      setHint("Отправка временно недоступна. Бриф и контакт останутся в этой вкладке, попробуйте позже");
+      return;
+    }
+    const text = draft.trim() || found.map(c => c.value).join(", ");
     setHint("");
     setDraft("");
     setS((st) => ({ ...st, entries: [...st.entries.map(({ animate, ...e }) => e), { role: "client", text }] }));
@@ -327,6 +339,7 @@ export function Intake() {
       answers: s.answers,
       summary: s.summary,
       contacts: collectContacts(found.map((c) => c.value)),
+      contactNote: draft.trim(),
       consent: true,
       page: location.href,
       utm: Object.fromEntries([...new URLSearchParams(location.search)].filter(([k]) => k.startsWith("utm_"))),
@@ -355,6 +368,7 @@ export function Intake() {
 
   const restart = () => {
     setS(initial());
+    setSelected([]);
     setDraft("");
     setHint("");
     requestAnimationFrame(() => input.current?.focus());
@@ -375,6 +389,9 @@ export function Intake() {
 
   const { phase } = s;
   const busy = !!thinking || revealing;
+  const answerText = [...selected, draft.trim()].filter(Boolean).join("\n");
+  const limit = phase === "compose" ? LIMITS.task : phase === "contact" ? LIMITS.contact : LIMITS.answer;
+  const length = phase === "dialog" ? answerText.length : draft.length;
   const lastAnimated = s.entries.map((e) => !!e.animate).lastIndexOf(true);
   // Entries of one reply reveal one after another
   const delays: number[] = [];
@@ -402,7 +419,7 @@ export function Intake() {
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     if (phase === "compose") start();
-    else if (phase === "dialog") answer(draft);
+    else if (phase === "dialog" && answerText.trim()) answer(answerText);
     else if (phase === "contact") sendContact();
   };
 
@@ -478,7 +495,7 @@ export function Intake() {
               {phase === "dialog" && s.question && !busy && (
                 <div className="ci-options" role="group" aria-label="Варианты ответа">
                   {s.question.options.map((o, i) => (
-                    <button key={o} type="button" style={{ animationDelay: `${i * 60}ms` }} onClick={() => answer(o)}>
+                    <button key={o} type="button" style={{ animationDelay: `${i * 60}ms` }} aria-pressed={selected.includes(o)} onClick={() => setSelected(values => values.includes(o) ? values.filter(value => value !== o) : [...values, o])}>
                       {o}
                     </button>
                   ))}
@@ -499,18 +516,7 @@ export function Intake() {
                 </div>
               )}
 
-              {phase === "contact" && !deliveryEnabled ? (
-                <div className="ci-done">
-                  <button type="button" className="ci-link" disabled={busy} onClick={async () => {
-                    if (!s.summary) return;
-                    try {
-                      await navigator.clipboard.writeText([s.summary.title, ...s.summary.items.map(i => `${i.label}: ${i.value}`)].join("\n"));
-                      setHint("Бриф скопирован");
-                    } catch { setHint("Не удалось скопировать. Выделите текст брифа вручную"); }
-                  }}>Скопировать бриф</button>
-                  <button type="button" className="ci-link" onClick={restart} disabled={busy}>Новый проект</button>
-                </div>
-              ) : phase !== "sent" ? (
+              {phase !== "sent" ? (
                 <form className={`ci-bar${busy ? " is-busy" : ""}${phase === "contact" ? " ci-bar-contact" : ""}`} onSubmit={submit}>
                   <div className="ci-input">
                   {phase === "compose" && !draft && <>
@@ -521,10 +527,11 @@ export function Intake() {
                     ref={input}
                     rows={1}
                     value={draft}
-                    maxLength={phase === "compose" ? LIMITS.task : phase === "contact" ? LIMITS.contact : LIMITS.answer}
+                    maxLength={limit}
+                    aria-describedby="intake-counter"
                     aria-label={phase === "compose" ? "Опишите задачу" : phase === "contact" ? "Email, Telegram или телефон" : "Свой ответ"}
                     placeholder={
-                      phase === "compose" ? "" : phase === "contact" ? (knownContacts.length ? "Или укажите другой контакт" : "Email, @telegram или телефон") : "Или напишите свой ответ"
+                      phase === "compose" ? "" : phase === "contact" ? (knownContacts.length ? "Или укажите другой контакт" : "Email, @telegram или телефон") : "Выберите варианты или напишите свой ответ"
                     }
                     autoComplete={phase === "contact" ? "email" : "off"}
                     disabled={phase !== "compose" && busy}
@@ -535,18 +542,13 @@ export function Intake() {
                       setHint("");
                       autosize(e.target);
                     }}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
-                        e.preventDefault();
-                        e.currentTarget.form?.requestSubmit();
-                      }
-                    }}
+
                   />
                   </div>
                   {detected.length > 0 && (
                     <span className="ci-kind">{detected.map((c) => CONTACT_LABEL[c.kind]).join(" и ")}</span>
                   )}
-                  <button type="submit" disabled={(!draft.trim() && !(phase === "contact" && knownContacts.length)) || busy} aria-label={phase === "contact" ? "Отправить заявку" : "Отправить"}>
+                  <button type="submit" disabled={(!(phase === "dialog" ? answerText.trim() : draft.trim()) && !(phase === "contact" && knownContacts.length)) || busy || length > limit} aria-label={phase === "contact" ? "Отправить заявку" : "Отправить"}>
                     {phase === "contact" && <span>Отправить заявку</span>}
                     <SendIcon />
                   </button>
@@ -560,22 +562,26 @@ export function Intake() {
                 </div>
               )}
 
+              {phase !== "sent" && <div className="ci-input-meta">
+                <span>{phase === "dialog" ? "Можно выбрать несколько и дополнить текстом" : "Enter добавляет новую строку"}</span>
+                <span id="intake-counter" className={length >= limit ? "is-limit" : ""}>{length.toLocaleString("ru-RU")} / {limit.toLocaleString("ru-RU")}{length >= limit ? " · Лимит" : ""}</span>
+              </div>}
               {phase === "dialog" && (
                 <div className="ci-actions">
                   <button type="button" className="ci-link" disabled={!s.question || busy} onClick={() => answer("")}>
                     Пропустить вопрос
                   </button>
                   {s.answers.length > 0 && (
-                    <button type="button" className="ci-link" disabled={!s.question || busy} onClick={() => answer("", true)}>
+                    <button type="button" className="ci-link" disabled={!s.question || busy} onClick={() => answer(answerText, true)}>
                       Сразу к итогу
                     </button>
                   )}
                 </div>
               )}
               {phase === "compose" && <p className="ci-note">Можно сразу добавить контакт для связи. Заявку отправим после вашего подтверждения</p>}
-              {phase === "contact" && deliveryEnabled && knownContacts.length > 0 && <p className="ci-note">Для связи: {knownContacts.map(c => c.value).join(", ")}</p>}
-              {phase === "contact" && !deliveryEnabled && hint && <p className="ci-note" role="status">{hint}</p>}
-              {phase === "contact" && deliveryEnabled && (
+              {phase === "contact" && knownContacts.length > 0 && <p className="ci-note">Для связи: {knownContacts.map(c => c.value).join(", ")}</p>}
+              {phase === "dialog" && hint && <p className="ci-note is-error" role="alert">{hint}</p>}
+              {phase === "contact" && (
                 <p className={`ci-note${hint ? " is-error" : ""}`} role={hint ? "alert" : undefined}>
                   {hint || (
                     <>

@@ -28,7 +28,7 @@ const server = createServer(async (req, res) => {
     for (const [key, value] of Object.entries(req.headers)) if (value) headers.set(key, Array.isArray(value) ? value.join(',') : value);
     headers.set('CF-Connecting-IP', req.socket.remoteAddress || 'local');
     const chunks=[]; let size=0;
-    for await (const chunk of req) { size += chunk.length; if (size > 48000) { res.writeHead(413).end(); return; } chunks.push(chunk); }
+    for await (const chunk of req) { size += chunk.length; if (size > 192000) { res.writeHead(413).end(); return; } chunks.push(chunk); }
     const request = new Request(`http://127.0.0.1:${port}${req.url}`, { method:req.method, headers, ...(!['GET','HEAD'].includes(req.method) ? {body:Buffer.concat(chunks)} : {}) });
     const response = await worker.fetch(request, env);
     res.writeHead(response.status, Object.fromEntries(response.headers));

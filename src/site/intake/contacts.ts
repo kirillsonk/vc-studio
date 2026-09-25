@@ -12,7 +12,7 @@ export function detectContact(raw: string): { kind: ContactKind; value: string }
   const v = raw.trim();
   if (!v) return null;
   if (/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v)) return { kind: "email", value: v.toLowerCase() };
-  const tg = v.match(/^(?:https?:\/\/)?(?:t\.me\/|telegram\.me\/)?@?([a-zA-Z][a-zA-Z0-9_]{4,31})$/);
+  const tg = v.match(/^(?:https?:\/\/)?(?:t\.me\/|telegram\.me\/|@)([a-zA-Z][a-zA-Z0-9_]{4,31})$/);
   if (tg && !/^\d/.test(tg[1])) return { kind: "telegram", value: `@${tg[1]}` };
   const digits = v.replace(/[^\d]/g, "");
   if (/^[+\d\s()-]+$/.test(v) && digits.length >= 10 && digits.length <= 15) {

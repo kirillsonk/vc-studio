@@ -9,7 +9,7 @@
 - TELEGRAM_BOT_TOKEN: секрет бота, только сервер
 - TELEGRAM_CHAT_ID: подтвержденная закрытая группа, только сервер
 - INTAKE_ADMIN_SECRET: временный секрет для поиска группы через POST /api/admin/telegram, передается в Authorization: Bearer. После настройки удалить из Sites
-- NEXT_PUBLIC_INTAKE_DELIVERY_ENABLED: разрешает доставку в интерфейсе, production-сборка по умолчанию true. GET /api/intake/config дополнительно проверяет наличие серверного получателя; без него доступно копирование брифа
+- NEXT_PUBLIC_INTAKE_DELIVERY_ENABLED: разрешает доставку в интерфейсе, production-сборка по умолчанию true. GET /api/intake/config дополнительно проверяет наличие серверного получателя; без него отправка недоступна, но финальное поле контакта остается
 
 ## Поведение
 

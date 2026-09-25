@@ -5,6 +5,13 @@ import { createPortal } from "react-dom";
 export function VCMotion() {
   const anchor = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
+  const [compact, setCompact] = useState(false);
+  useEffect(() => {
+    const query = matchMedia("(max-width: 900px)");
+    const update = () => setCompact(query.matches);
+    update(); query.addEventListener("change", update);
+    return () => query.removeEventListener("change", update);
+  }, []);
   const [allowed, setAllowed] = useState(false);
   const [paused, setPaused] = useState(false);
   const active = allowed && !paused;
@@ -38,7 +45,7 @@ export function VCMotion() {
       cancelled = true;
       cleanup?.();
     };
-  }, [active]);
+  }, [active, compact]);
   return (
     <div ref={anchor} className="production-art vc-art">
       <div className="vc-halo" aria-hidden="true" />
@@ -87,7 +94,7 @@ export function VCMotion() {
             className="vc-motion-canvas"
             aria-hidden="true"
           />,
-          document.body,
+          compact && anchor.current ? anchor.current : document.body,
         )}
     </div>
   );

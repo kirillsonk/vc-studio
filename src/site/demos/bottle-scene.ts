@@ -103,6 +103,11 @@ export function createBottleScene(host: HTMLElement, canvas: HTMLCanvasElement, 
   const labelTexture = new THREE.CanvasTexture(labelCanvas);
   labelTexture.colorSpace = THREE.SRGBColorSpace;
   labelTexture.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+  const backCanvas = document.createElement("canvas");
+  backCanvas.width = backCanvas.height = 1024;
+  const backTexture = new THREE.CanvasTexture(backCanvas);
+  backTexture.colorSpace = THREE.SRGBColorSpace;
+  backTexture.anisotropy = labelTexture.anisotropy;
   const drawLabel = (options: BottleOptions) => {
     const c = labelCanvas.getContext("2d")!;
     const tone = new THREE.Color(options.color);
@@ -132,6 +137,31 @@ export function createBottleScene(host: HTMLElement, canvas: HTMLCanvasElement, 
     c.fillStyle=accent;c.fillRect(310,863,390,4);
     c.fillStyle=ink;c.font = `400 35px ${family}`;
     c.fillText("НА КАЖДЫЙ ДЕНЬ", 510, 937);
+    const back = backCanvas.getContext("2d")!;
+    back.clearRect(0, 0, 1024, 1024);
+    back.textAlign = "center";
+    back.fillStyle = ink;
+    back.font = `500 54px ${family}`;
+    back.fillText("СБОРКА / DAILY SERIES", 512, 115);
+    // A contour globe makes the back a second designed face of the product.
+    back.save(); back.translate(512, 435);
+    for (let i = -3; i <= 3; i++) {
+      back.strokeStyle = i === 0 ? accent : ink;
+      back.globalAlpha = i === 0 ? 1 : .5;
+      back.lineWidth = i === 0 ? 12 : 5;
+      back.beginPath();
+      back.ellipse(0, 0, 260, 45 + Math.abs(i) * 63, i * .22, 0, Math.PI * 2);
+      back.stroke();
+    }
+    back.restore();
+    back.fillStyle = accent;
+    back.beginPath(); back.arc(512, 435, 38, 0, Math.PI * 2); back.fill();
+    back.fillStyle = ink; back.font = `500 110px ${family}`;
+    back.fillText(`${options.size} мл`, 512, 815);
+    back.fillStyle = accent; back.fillRect(280, 857, 464, 4);
+    back.fillStyle = ink; back.font = `400 40px ${family}`;
+    back.fillText("ТЕРМОБУТЫЛКА", 512, 937);
+    backTexture.needsUpdate = true;
     labelTexture.needsUpdate = true;
   };
   drawLabel(initial);
@@ -142,6 +172,11 @@ export function createBottleScene(host: HTMLElement, canvas: HTMLCanvasElement, 
     new THREE.MeshStandardMaterial({ map: labelTexture, transparent: true, roughness: .65, metalness: 0, depthWrite: false }),
   );
   product.add(label);
+  const backLabel = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.633, 0.633, 1.18, 96, 1, true, Math.PI - labelArc / 2, labelArc),
+    new THREE.MeshStandardMaterial({ map: backTexture, transparent: true, roughness: .65, metalness: 0, depthWrite: false }),
+  );
+  product.add(backLabel);
   const baseRing = new THREE.Mesh(new THREE.TorusGeometry(.605, .012, 12, 96), steel);
   baseRing.rotation.x = Math.PI / 2; baseRing.position.y = .11; product.add(baseRing);
   const capRim = new THREE.Mesh(new THREE.TorusGeometry(.459, .009, 12, 96), steel);
@@ -201,6 +236,8 @@ export function createBottleScene(host: HTMLElement, canvas: HTMLCanvasElement, 
     band.position.y = 2.05 * heightScale;
     label.position.y = 0.95 * heightScale;
     label.scale.y = heightScale;
+    backLabel.position.y = label.position.y;
+    backLabel.scale.y = heightScale;
     capHolder.position.y = 2.08 * heightScale;
     const wantCap = target.cap === "sport" ? 1 : 0;
     capBlend += (wantCap - capBlend) * (1 - Math.pow(0.001, dt));
@@ -247,6 +284,7 @@ export function createBottleScene(host: HTMLElement, canvas: HTMLCanvasElement, 
       });
       shadowTexture.dispose();
       labelTexture.dispose();
+      backTexture.dispose();
       env.dispose();
       renderer.dispose();
       renderer.forceContextLoss();

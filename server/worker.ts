@@ -43,7 +43,7 @@ async function readBody(request: Request) {
     const { done, value } = await reader.read();
     if (done) break;
     size += value.byteLength;
-    if (size > 48000) { await reader.cancel(); throw new Error("body_too_large"); }
+    if (size > 192000) { await reader.cancel(); throw new Error("body_too_large"); }
     chunks.push(value);
   }
   const bytes = new Uint8Array(size);

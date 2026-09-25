@@ -133,11 +133,14 @@ export function createVCScene(host: HTMLElement, canvas: HTMLCanvasElement) {
     left = rect.left;
     boxWidth = rect.width;
     boxHeight = rect.height;
-    renderer.setSize(width, height, false);
-    camera.left = -width / 2;
-    camera.right = width / 2;
-    camera.top = height / 2;
-    camera.bottom = -height / 2;
+    const compact = width <= COMPACT.breakpoint;
+    const renderWidth = compact ? boxWidth : width;
+    const renderHeight = compact ? boxHeight : height;
+    renderer.setSize(renderWidth, renderHeight, false);
+    camera.left = -renderWidth / 2;
+    camera.right = renderWidth / 2;
+    camera.top = renderHeight / 2;
+    camera.bottom = -renderHeight / 2;
     camera.updateProjectionMatrix();
     schedule();
   };
@@ -150,13 +153,13 @@ export function createVCScene(host: HTMLElement, canvas: HTMLCanvasElement) {
     phase += elapsed;
     const scroll = window.scrollY;
     const start = Math.max(50, top + boxHeight * 0.5 - height * 0.62);
-    const progress = ease(
+    const compact = width <= COMPACT.breakpoint;
+    const progress = compact ? 0 : ease(
       clamp((scroll - start) / Math.max(500, height * 0.8)),
     );
-    const compact = width <= COMPACT.breakpoint;
     const scale = Math.min(boxWidth / (compact ? COMPACT.width : 540), boxHeight / (compact ? COMPACT.height : 500));
-    const originX = left + boxWidth / 2 - width / 2;
-    const originY = height / 2 - (top - scroll + boxHeight / 2);
+    const originX = compact ? 0 : left + boxWidth / 2 - width / 2;
+    const originY = compact ? 12 : height / 2 - (top - scroll + boxHeight / 2);
     const idle = 1 - progress;
     // The composition moves on its own now, so the whole-scene sway stays small
     euler.set(
@@ -256,7 +259,7 @@ export function createVCScene(host: HTMLElement, canvas: HTMLCanvasElement) {
     host.dataset.motion = "active";
     canvas.style.opacity = "1";
     // Idle motion is limited to the visible hero; background waves render only on scroll.
-    if (progress < 1) frame = requestAnimationFrame(draw);
+    if (progress < 1 && (!compact || (top + boxHeight > scroll && top < scroll + height))) frame = requestAnimationFrame(draw);
   }
   function schedule() {
     if (!frame && !stopped && !document.hidden)

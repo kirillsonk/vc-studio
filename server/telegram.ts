@@ -7,6 +7,7 @@ const contact = (kind: string) => z.string().max(200).refine(v => detectContact(
 export const submitSchema = nextRequestSchema.omit({forceSummary:true}).extend({
   summary: z.object({title:z.string().trim().min(1).max(160),items:z.array(z.object({label:z.string().min(1).max(100),value:z.string().max(800)}).strict()).min(1).max(8)}).strict(),
   contacts:z.object({email:contact('email').optional(),telegram:contact('telegram').optional(),phone:contact('phone').optional()}).strict().refine(v=>Object.values(v).some(Boolean)),
+  contactNote:z.string().max(1000).optional(),
   consent:z.literal(true),page:z.string().url().max(1500),utm:z.record(z.string().max(50),z.string().max(300)).refine(v=>Object.keys(v).length<=10),
 }).strict();
 type Lead = z.infer<typeof submitSchema>;
@@ -30,7 +31,7 @@ export async function discoverTelegram(env:Env,fetcher:typeof fetch) {
   return {bot:bot.username,chats:[...chats.values()],updates:updates.length};
 }
 export function leadMessages(lead:Lead) {
-  const text=[`Новая заявка · ${lead.sessionId}`,lead.summary.title,'',...Object.entries(lead.contacts).map(([k,v])=>`${k}: ${v}`),'',...lead.summary.items.map(i=>`${i.label}: ${i.value}`),'','Исходная задача',lead.task,'',...lead.answers.flatMap(a=>[a.question,a.answer||'Вопрос пропущен','']),`Страница: ${lead.page}`,...Object.entries(lead.utm).map(([k,v])=>`${k}: ${v}`)].join('\n');
+  const text=[`Новая заявка · ${lead.sessionId}`,lead.summary.title,'',...Object.entries(lead.contacts).map(([k,v])=>`${k}: ${v}`),'',...lead.summary.items.map(i=>`${i.label}: ${i.value}`),'',...(lead.contactNote?['Комментарий при отправке',lead.contactNote,'']:[]),'Исходная задача',lead.task,'',...lead.answers.flatMap(a=>[a.question,a.answer||'Вопрос пропущен','']),`Страница: ${lead.page}`,...Object.entries(lead.utm).map(([k,v])=>`${k}: ${v}`)].join('\n');
   const chunks:string[]=[];
   // Stay below Telegram's UTF-16 limit without splitting a surrogate pair
   let chunk='';for(const char of text){if(chunk.length+char.length>3900){chunks.push(chunk);chunk='';}chunk+=char;}if(chunk)chunks.push(chunk);

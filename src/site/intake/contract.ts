@@ -6,7 +6,7 @@
  */
 
 export const MAX_QUESTIONS = 5;
-export const LIMITS = { task: 4000, answer: 600, contact: 200, summaryValue: 800 } as const;
+export const LIMITS = { task: 8000, answer: 4000, contact: 1000, summaryValue: 800 } as const;
 
 export interface Answer {
   /** Question text exactly as the client saw it */
@@ -66,6 +66,8 @@ export interface SubmitRequest {
   /** Summary after the client's edits */
   summary: Summary;
   contacts: Contacts;
+  /** Original final message, including any extra notes alongside the contact */
+  contactNote?: string;
   consent: true;
   page: string;
   utm: Record<string, string>;

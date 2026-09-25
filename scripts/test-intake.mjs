@@ -8,7 +8,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 const temp = await mkdtemp(join(tmpdir(), "sborka-test-"));
-await build({ entryPoints: ["server/intake.ts", "server/worker.ts", "server/telegram.ts", "src/site/intake/contacts.ts"], outdir: temp, entryNames:"[name]", bundle: true, format: "esm", platform: "node" });
+await build({ entryPoints: ["server/intake.ts", "server/worker.ts", "server/telegram.ts", "src/site/intake/contacts.ts", "src/site/intake/mock.ts"], outdir: temp, entryNames:"[name]", bundle: true, format: "esm", platform: "node" });
 const { nextRequestSchema, generateNext, cleanCopy } = await import(pathToFileURL(join(temp, "intake.js")));
 const { handle, consumeLimit } = await import(pathToFileURL(join(temp, "worker.js")));
 const req = { schemaVersion: 1, sessionId: "test-session-123456", service: null, task: "Нужен сайт", answers: [], forceSummary: false };
@@ -29,7 +29,7 @@ const request = (body = req, overrides = {}) => new Request("https://site.exampl
 });
 
 await test("input rejects oversized data, unknown fields, contacts and unsupported schema", () => {
-  for (const body of [ { ...req, task: "x".repeat(4001) }, { ...req, contacts: { email: "a@example.com" } }, { ...req, schemaVersion: 2 }, { ...req, sessionId: "../bad" }, { ...req, answers: Array(6).fill({ question: "?", answer: "" }) }, { ...req, answers: [{ question: "?", answer: "x".repeat(601) }] } ]) assert.equal(nextRequestSchema.safeParse(body).success, false);
+  for (const body of [ { ...req, task: "x".repeat(8001) }, { ...req, contacts: { email: "a@example.com" } }, { ...req, schemaVersion: 2 }, { ...req, sessionId: "../bad" }, { ...req, answers: Array(6).fill({ question: "?", answer: "" }) }, { ...req, answers: [{ question: "?", answer: "x".repeat(4001) }] } ]) assert.equal(nextRequestSchema.safeParse(body).success, false);
   assert.equal(nextRequestSchema.safeParse({ ...req, task: "x".repeat(4000) }).success, true);
 });
 await test("model request excludes session and recognizable free-text contacts; no storage", async () => {
@@ -131,5 +131,25 @@ await test("failed delivery resumes confirmed chunks; ambiguous network failure 
 });
 await test("Telegram discovery requires a separate server admin secret",async()=>{
   const r=await handle(new Request('https://site.example/api/admin/telegram',{method:'POST'}),{INTAKE_ADMIN_SECRET:'secret'},()=>{throw Error('no access');});assert.equal(r.status,404);
+});
+await test("long combined answers keep full history and final contact notes survive delivery", async () => {
+  const long = {...req, task: "Задача ".repeat(1000), answers:[{question:"Что нужно в первой версии?",answer:"Оплата\nЛичный кабинет\n" + "Детали ".repeat(400)}]};
+  assert.equal(nextRequestSchema.safeParse(long).success,true);
+  let payload;
+  await generateNext(long,"fake",async(url,opts)=>{payload=JSON.parse(opts.body);return upstream(question)();});
+  const context=JSON.parse(payload.input[0].content);
+  assert.equal(context.answers[0].answer,long.answers[0].answer);
+  const withNote={...lead,contactNote:"Пишите test@example.com, после 15:00"};
+  assert.equal(submitSchema.safeParse(withNote).success,true);
+  assert.ok(leadMessages(withNote).join("\n").includes("после 15:00"));
+});
+await test("ordinary words in contact fields are not Telegram accounts",()=>{
+  assert.equal(submitSchema.safeParse({...lead,contacts:{telegram:"hello"}}).success,false);
+  assert.equal(submitSchema.safeParse({...lead,contacts:{telegram:"@sample_user"}}).success,true);
+});
+await test("fallback summary fits the delivery contract after long free-text answers",async()=>{
+  const {mockSummary}=await import(pathToFileURL(join(temp,"mock.js")));
+  const input={...req,task:"Нужен сайт ".repeat(700),answers:[{question:"Что уже есть к старту?",answer:"Материалы ".repeat(390)}]};
+  assert.equal(submitSchema.safeParse({...lead,task:input.task,answers:input.answers,summary:mockSummary(input)}).success,true);
 });
 await rm(temp, { recursive: true, force: true });

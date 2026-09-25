@@ -2474,3 +2474,10 @@ svg {
     inset: 20% 0;
   }
 }
+
+@media (max-width: 900px) {
+  .vc-art { height: clamp(210px, 31vw, 275px); margin: 28px 0 28px; }
+  .vc-art .vc-motion-canvas { position: absolute; inset: 0; z-index: 0; }
+  .vc-art .vc-static { transform: translateY(-12px); }
+  .vc-art .motion-toggle { bottom: -4px; right: 4px; z-index: 1; background: var(--surface); }
+}
