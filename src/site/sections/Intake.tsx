@@ -322,7 +322,9 @@ export function Intake() {
       setHint("Не похоже на email, Telegram или телефон. Проверьте, пожалуйста");
       return;
     }
-    if (!deliveryEnabled) {
+    const available = deliveryEnabled || await deliveryAvailable();
+    setDeliveryEnabled(available);
+    if (!available) {
       setHint("Отправка временно недоступна. Бриф и контакт останутся в этой вкладке, попробуйте позже");
       return;
     }

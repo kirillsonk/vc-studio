@@ -12,7 +12,7 @@ await build({ entryPoints: ["server/intake.ts", "server/worker.ts", "server/tele
 const { nextRequestSchema, generateNext, cleanCopy } = await import(pathToFileURL(join(temp, "intake.js")));
 const { handle, consumeLimit } = await import(pathToFileURL(join(temp, "worker.js")));
 const req = { schemaVersion: 1, sessionId: "test-session-123456", service: null, task: "Нужен сайт", answers: [], forceSummary: false };
-const question = { type: "question", message: "Уточню детали", question: "Для кого делаем проект?", options: ["Для компании", "Для агентства"], summary: { title: "", items: [] }, internal: { clientType: "unknown", complexity: "unknown", notes: "private note" } };
+const question = { type: "question", message: "Уточню детали", question: "Для кого делаем проект?", options: ["Для компании", "Для агентства"], summary: { title: "", items: [] }, internal: { knownFacts:{scope:"Нужен сайт",users:"",materials:"",systems:"",deadline:"",budget:""},nextMissing:"Пользователи",clientType: "unknown", complexity: "unknown", notes: "private note" } };
 const summary = { ...question, type: "summary", question: "", options: [], summary: { title: "Сайт", items: [{ label: "Задача", value: "Нужен сайт" }] } };
 const upstream = value => async () => {
   const turn = value.type === "question" ? {type:value.type,message:value.message,question:value.question,options:value.options} : {type:value.type,message:value.message,summary:value.summary};
