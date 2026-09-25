@@ -8,7 +8,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 const temp = await mkdtemp(join(tmpdir(), "sborka-test-"));
-await build({ entryPoints: ["server/intake.ts", "server/worker.ts", "server/telegram.ts", "src/site/intake/contacts.ts", "src/site/intake/mock.ts", "src/site/demos/order-model.ts"], outdir: temp, entryNames:"[name]", bundle: true, format: "esm", platform: "node" });
+await build({ entryPoints: ["server/intake.ts", "server/worker.ts", "server/telegram.ts", "src/site/intake/contacts.ts", "src/site/intake/mock.ts", "src/site/demos/order-model.ts", "src/site/analytics/metrika.ts"], outdir: temp, entryNames:"[name]", bundle: true, format: "esm", platform: "node" });
 const { nextRequestSchema, generateNext, cleanCopy } = await import(pathToFileURL(join(temp, "intake.js")));
 const { handle, consumeLimit } = await import(pathToFileURL(join(temp, "worker.js")));
 const req = { schemaVersion: 1, sessionId: "test-session-123456", service: null, task: "Нужен сайт", answers: [], forceSummary: false };
@@ -190,5 +190,30 @@ await test("submit HTTP endpoint requires review and returns a numbered receipt"
   const submit=body=>new Request('https://site.example/api/intake/submit',{method:'POST',headers:{Origin:'https://site.example','Content-Type':'application/json','CF-Connecting-IP':'192.0.2.5'},body:JSON.stringify(body)});
   assert.equal((await handle(submit({...lead,contactConfirmed:false}),env,fake)).status,400);assert.equal(sends,0);
   const response=await handle(submit(lead),env,fake);assert.equal(response.status,200);assert.equal((await response.json()).number,1);assert.equal(sends,1);db.close();
+});
+await test("analytics is off without a counter and exposes no secrets in config",async()=>{
+  const disabled=await import(pathToFileURL(join(temp,'metrika.js'))+'?disabled');
+  disabled.startMetrika(null,'/');
+  for(const value of [null,undefined,'',0,'123abc',-5])assert.equal(disabled.validCounter(value),null);
+  const response=await handle(new Request('https://site.example/api/analytics/config'),{YANDEX_METRIKA_ID:'123456',CHATGPT_PLATFORM_API_KEY:'must-not-leak'});
+  assert.deepEqual(await response.json(),{counterId:123456});
+  assert.deepEqual(await (await handle(new Request('https://site.example/api/analytics/config'),{})).json(),{counterId:null});
+});
+await test("analytics sends only allowed goals and sanitized page metadata",async()=>{
+  const calls=[];const scripts=[];
+  globalThis.window={ym:(...args)=>calls.push(args)};
+  globalThis.location={origin:'https://site.example'};
+  globalThis.document={referrer:'https://ref.example/private?email=private@example.com',createElement:()=>({}),head:{appendChild:el=>scripts.push(el)}};
+  try {
+    const analytics=await import(pathToFileURL(join(temp,'metrika.js'))+'?enabled');
+    analytics.trackGoal('intake_start');analytics.trackGoal('private@example.com');
+    analytics.startMetrika(123456,'/');analytics.pageView('/case');analytics.pageView('/case');analytics.trackGoal('lead_sent');analytics.startMetrika(123456,'/');
+    assert.equal(scripts.length,1);assert.equal(scripts[0].src,'https://mc.yandex.ru/metrika/tag.js');
+    assert.equal(calls.filter(c=>c[1]==='hit').length,2);
+    assert.deepEqual(calls.filter(c=>c[1]==='reachGoal').map(c=>c.slice(2)),[['intake_start'],['lead_sent']]);
+    assert.equal(calls[0][2].webvisor,false);assert.equal(calls[0][2].trackLinks,false);
+    assert.equal(JSON.stringify(calls).includes('private'),false);
+    window.ym=()=>{throw Error('blocked');};assert.doesNotThrow(()=>analytics.trackGoal('lead_sent'));
+  } finally {delete globalThis.window;delete globalThis.location;delete globalThis.document;}
 });
 await rm(temp, { recursive: true, force: true });

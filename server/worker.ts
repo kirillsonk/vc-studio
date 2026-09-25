@@ -1,3 +1,4 @@
+import { validCounter } from "../src/site/analytics/metrika";
 import { generateNext, ModelError, nextRequestSchema } from "./intake";
 import { deliverLead, discoverTelegram, submitSchema } from "./telegram";
 
@@ -8,6 +9,7 @@ interface Statement {
 }
 export interface Env {
   CHATGPT_PLATFORM_API_KEY?: string;
+  YANDEX_METRIKA_ID?: string;
   TELEGRAM_BOT_TOKEN?: string;
   TELEGRAM_CHAT_ID?: string;
   INTAKE_ADMIN_SECRET?: string;
@@ -54,6 +56,10 @@ async function readBody(request: Request) {
 
 export async function handle(request: Request, env: Env, fetcher: typeof fetch = fetch): Promise<Response> {
   const url = new URL(request.url);
+  if(url.pathname === "/api/analytics/config") {
+    if(request.method!=="GET")return json({error:"method_not_allowed"},405);
+    return json({counterId:validCounter(env.YANDEX_METRIKA_ID)});
+  }
   if (url.pathname === "/api/admin/telegram") {
     if (!env.INTAKE_ADMIN_SECRET || request.headers.get("Authorization") !== `Bearer ${env.INTAKE_ADMIN_SECRET}`) return json({error:"not_found"},404);
     if (request.method !== "POST") return json({error:"method_not_allowed"},405);

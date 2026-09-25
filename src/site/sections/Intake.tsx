@@ -7,8 +7,10 @@ import { SERVICES, serviceFromQuery } from "../brief";
 import { LIMITS, MAX_QUESTIONS, type Answer, type Question, type Summary, type Assessment, type Contacts, type PhoneChannel } from "../intake/contract";
 import { deliveryAvailable, INTAKE_MOCK, PRIVACY_URL, nextStep, submitBrief } from "../intake/client";
 import { CONTACT_LABEL, collectContacts, splitContacts, extractContacts, invalidTelegram } from "../intake/contacts";
+import { trackGoal } from "../analytics/metrika";
 import { ThinkingAtom } from "../intake/ThinkingAtom";
 
+const SENT_MESSAGE = "Заявка отправлена. Мы свяжемся с вами";
 const STORAGE_KEY = "sborka-intake-v3";
 const EXAMPLES = [
   "Лендинг для запуска нового продукта к концу месяца",
@@ -204,6 +206,10 @@ export function Intake() {
       const saved = JSON.parse(sessionStorage.getItem(STORAGE_KEY) || "null");
       if (saved?.sessionId && saved.phase) {
         const { draft: storedDraft, selected: storedSelected, ...state } = saved;
+        if(state.phase === "sent" && Array.isArray(state.entries)) {
+          state.entries = state.entries.map((entry: Entry, i: number) =>
+            i === state.entries.length - 1 && entry.role === "studio" ? {...entry, text:SENT_MESSAGE} : entry);
+        }
         setS({ ...initial(), ...state });
         if (typeof storedDraft === "string") setDraft(storedDraft);
         if (Array.isArray(storedSelected)) setSelected(storedSelected.filter(v => typeof v === "string"));
@@ -283,6 +289,7 @@ export function Intake() {
       const next = push(added);
       setS((st) => ({ ...st, entries: next(st.entries), question: { question: res.question, options: res.options } }));
     } else {
+      trackGoal("brief_ready");
       added.push({ role: "studio", text: "", kind: "summary", animate: true });
       added.push({ role: "studio", text: extractContacts([base.task, ...base.answers.map(a => a.answer)].join("\n")).length ? "Контакт уже есть в переписке. Проверьте бриф, затем подтвердите данные для связи" : CONTACT_QUESTION, animate: true });
       const next = push(added);
@@ -293,6 +300,7 @@ export function Intake() {
   const start = () => {
     const task = draft.trim();
     if (!task || task.length > LIMITS.task || thinking) return;
+    trackGoal("intake_start");
     const next: State = { ...s, phase: "dialog", task, entries: [{ role: "client", text: task }] };
     setS(next);
     setDraft("");
@@ -327,6 +335,7 @@ export function Intake() {
     const found = splitContacts(raw);
     if (!found.length) { setHint("Не похоже на email, Telegram или телефон. Проверьте, пожалуйста"); return; }
     setHint("");
+    trackGoal("contact_review");
     setS(st => ({...st, phase:"review", review:{contacts:collectContacts(found.map(c=>c.value)),note:raw}}));
   };
 
@@ -367,13 +376,13 @@ export function Intake() {
     setThinking(null);
     sending.current = false;
     if (res.ok) {
-      const where = contacts.phone ? ({call:"по телефону",whatsapp:"в WhatsApp",telegram:"в Telegram"}[phoneChannel!]) : contacts.telegram ? "в Telegram" : "на почту";
+      trackGoal("lead_sent");
       const next = push([
         {
           role: "studio",
           text: INTAKE_MOCK
             ? "Готово, бриф собран. Сейчас сайт в тестовом режиме, поэтому заявка пока никуда не ушла"
-            : `Заявка №${String(res.number).padStart(3,"0")} у нас. Свяжемся ${where} с оценкой и вопросами`,
+            : SENT_MESSAGE,
           animate: true,
         },
       ]);
@@ -472,7 +481,7 @@ export function Intake() {
             </div>
           </div>
 
-          <div className="ci-window">
+          <div className="ci-window ym-hide-content">
             <div className="ci-head">
               <span className="assistant-avatar" aria-hidden="true">
                 <ThinkingAtom size={30} still={!thinking} />

@@ -1,5 +1,6 @@
 "use client";
 import React from 'react';
+import { trackGoal } from "../analytics/metrika";
 import { Configurator } from './Configurator';
 import { ACCESSORIES, DEFAULT_BOTTLE, available, bottleProduct, cancelOrder, initialShop, money, placeOrder, total, type CartLine, type Delivery, type Product } from './order-model';
 
@@ -38,6 +39,7 @@ export function OrderDemo() {
   function order(){
     if(!cart.length||busy||placing.current)return;
     placing.current=true;
+    trackGoal("demo_order");
     setShop(s=>placeOrder(s,cart,delivery));setCart([]);setStep(0);setNotice('Демозаказ создан');
     requestAnimationFrame(()=>system.current?.scrollIntoView({block:'start',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'}));
   }

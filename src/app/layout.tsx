@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Onest } from 'next/font/google';
+import { Analytics } from "@/site/analytics/Analytics";
 import { Nav } from '@/site/Nav';
 import { Footer } from '@/site/Footer';
 import { PageTransition } from '@/site/PageTransition';
@@ -25,6 +26,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Nav />
         <PageTransition>{children}</PageTransition>
         <Footer />
+        <Analytics />
       </body>
     </html>
   );
