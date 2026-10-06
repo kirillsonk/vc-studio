@@ -116,6 +116,7 @@ await test("confirmed delivery is idempotent under concurrent and repeated submi
   await Promise.all([deliverLead(lead,env,fetcher),deliverLead(lead,env,fetcher)]);
   assert.equal((await deliverLead(lead,env,fetcher)).ok,true);assert.equal(sent,1);
   assert.equal((await deliverLead({...lead,task:'Другая задача'},env,fetcher)).error,'submission_conflict');
+  assert.equal(db.prepare('SELECT payload FROM intake_leads').get().payload, '');
   db.close();
 });
 await test("failed delivery resumes confirmed chunks; ambiguous network failure is not resent",async()=>{

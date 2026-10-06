@@ -2,19 +2,16 @@ import { METRIKA_COUNTER_ID, validCounter } from "../src/site/analytics/metrika"
 import { hasAi, hasTelegram, rateSecret, type UpstreamEnv } from "./upstream";
 import { generateNext, ModelError, nextRequestSchema } from "./intake";
 import { deliverLead, discoverTelegram, submitSchema } from "./telegram";
+import { intakeState, type D1Database, type IntakeState } from "./intake-state";
 
-interface Statement {
-  bind(...values: (string | number)[]): Statement;
-  first<T>(): Promise<T | null>;
-  run(): Promise<unknown>;
-}
 export interface Env extends UpstreamEnv {
   CHATGPT_PLATFORM_API_KEY?: string;
   YANDEX_METRIKA_ID?: string;
   TELEGRAM_BOT_TOKEN?: string;
   TELEGRAM_CHAT_ID?: string;
   INTAKE_ADMIN_SECRET?: string;
-  DB?: { prepare(sql: string): Statement };
+  DB?: D1Database;
+  STATE?: IntakeState;
   ASSETS?: { fetch(request: Request): Promise<Response> };
 }
 const json = (body: unknown, status = 200, extra: Record<string, string> = {}) => Response.json(body, {
@@ -22,14 +19,9 @@ const json = (body: unknown, status = 200, extra: Record<string, string> = {}) =
 });
 
 export async function consumeLimit(env: Env, key: string, max: number, seconds: number, now = Math.floor(Date.now() / 1000)) {
-  if (!env.DB) throw new Error("storage_unavailable");
-  const row = await env.DB.prepare(`INSERT INTO intake_limits (key, count, expires) VALUES (?, 1, ?)
-    ON CONFLICT(key) DO UPDATE SET
-    count = CASE WHEN expires <= ? THEN 1 ELSE count + 1 END,
-    expires = CASE WHEN expires <= ? THEN excluded.expires ELSE expires END
-    RETURNING count, expires`).bind(key, now + seconds, now, now).first<{ count: number; expires: number }>();
-  if (!row) throw new Error("storage_unavailable");
-  return { allowed: row.count <= max, retry: Math.max(1, row.expires - now) };
+  const state = intakeState(env);
+  if (!state) throw new Error("state_unavailable");
+  return state.consumeLimit(key, max, seconds, now);
 }
 async function fingerprint(ip: string, secret: string) {
   const day = Math.floor(Date.now() / 86400000);
@@ -69,7 +61,7 @@ export async function handle(request: Request, env: Env, fetcher: typeof fetch =
   if (!url.pathname.startsWith("/api/intake/")) {
     return env.ASSETS ? env.ASSETS.fetch(request) : new Response("Not found", { status: 404 });
   }
-  if (url.pathname === "/api/intake/config" && request.method === "GET") return json({delivery:!!(hasTelegram(env) && env.DB)});
+  if (url.pathname === "/api/intake/config" && request.method === "GET") return json({delivery:!!(hasTelegram(env) && intakeState(env))});
   if (url.pathname !== "/api/intake/next" && url.pathname !== "/api/intake/submit") return json({ error: "not_found" }, 404);
   if (request.method !== "POST") return json({ error: "method_not_allowed" }, 405, { Allow: "POST" });
   // JSON + same-origin checks block drive-by cross-site forms. They supplement rate limits
@@ -81,9 +73,12 @@ export async function handle(request: Request, env: Env, fetcher: typeof fetch =
     let lead;
     try { lead = submitSchema.parse(await readBody(request)); } catch { return json({ok:false,error:"invalid_request"},400); }
     try {
-      const id = await fingerprint(request.headers.get("CF-Connecting-IP") || "unknown", rateSecret(env));
-      const rate = await consumeLimit(env,`submit:${id}`,5,3600);
+      const ip = request.headers.get("CF-Connecting-IP") || "unknown";
+      const id = await fingerprint(ip, rateSecret(env));
+      const rate = await consumeLimit(env,`submit:${id}`,ip === "unknown" ? 30 : 5,3600);
       if (!rate.allowed) return json({ok:false,error:"rate_limit"},429,{"Retry-After":String(rate.retry)});
+      const daily = await consumeLimit(env,"submit:global",100,86400);
+      if (!daily.allowed) return json({ok:false,error:"rate_limit"},429,{"Retry-After":String(daily.retry)});
       const result = await deliverLead(lead,env,fetcher,request.signal);
       return json(result,result.ok?200:503);
     } catch { return json({ok:false,error:"temporarily_unavailable"},503); }
@@ -101,7 +96,7 @@ export async function handle(request: Request, env: Env, fetcher: typeof fetch =
     if (!rate.allowed) return json({ error: "rate_limit" }, 429, { "Retry-After": String(rate.retry) });
     const daily = await consumeLimit(env, "global", 1000, 86400);
     if (!daily.allowed) return json({ error: "rate_limit" }, 429, { "Retry-After": String(daily.retry) });
-    await env.DB!.prepare("DELETE FROM intake_limits WHERE key IN (SELECT key FROM intake_limits WHERE expires < ? LIMIT 100)").bind(Math.floor(Date.now() / 1000)).run();
+    await intakeState(env)!.cleanup(Math.floor(Date.now() / 1000));
   } catch {
     console.warn(JSON.stringify({ event: "intake", code: "storage_unavailable" }));
     return json({ error: "temporarily_unavailable" }, 503);

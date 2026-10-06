@@ -12,6 +12,7 @@ import { trackGoal } from "../analytics/metrika";
 import { ThinkingAtom } from "../intake/ThinkingAtom";
 
 const SENT_MESSAGE = "Заявка отправлена. Мы свяжемся с вами";
+const UNCERTAIN_MESSAGE = "Не удалось подтвердить доставку. Бриф и контакты остались в этой вкладке. Можно подготовить новую отправку, но если первая заявка дошла, получится дубль";
 const STORAGE_KEY = "sborka-intake-v3";
 const EXAMPLES = [
   "Лендинг для запуска нового продукта к концу месяца",
@@ -41,13 +42,15 @@ interface State {
   summary: Summary | null;
   assessment?: Assessment;
   review?: {contacts: Contacts; note: string; phoneChannel?: PhoneChannel};
+  deliveryRecovery?: "uncertain" | "prepared";
 }
+const newSessionId = () =>
+  typeof crypto !== "undefined" && "randomUUID" in crypto
+    ? crypto.randomUUID()
+    : Math.random().toString(36).slice(2) + Date.now().toString(36);
 const initial = (): State => ({
   phase: "compose",
-  sessionId:
-    typeof crypto !== "undefined" && "randomUUID" in crypto
-      ? crypto.randomUUID()
-      : Math.random().toString(36).slice(2) + Date.now().toString(36),
+  sessionId: newSessionId(),
   service: null,
   task: "",
   answers: [],
@@ -434,7 +437,7 @@ export function Intake() {
 
   const sending = React.useRef(false);
   const sendContact = async () => {
-    if (!s.summary || !s.review || thinking || revealing || sending.current) return;
+    if (!s.summary || !s.review || thinking || revealing || sending.current || s.deliveryRecovery === "uncertain") return;
     if (!consented) { setHint("Подтвердите согласие на обработку данных перед отправкой"); return; }
     if (s.review.contacts.phone && !s.review.phoneChannel) {setHint("Выберите, как связаться по номеру");return;}
     sending.current = true;
@@ -482,14 +485,23 @@ export function Intake() {
           animate: true,
         },
       ]);
-      setS((st) => ({ ...st, entries: next(st.entries), phase: "sent" }));
+      setS((st) => ({ ...st, entries: next(st.entries), phase: "sent", deliveryRecovery: undefined }));
     } else {
+      const uncertain = res.error === "delivery_uncertain";
+      if (uncertain) setConsented(false);
       const next = push([
-        { role: "studio", text: res.error === "delivery_uncertain" ? "Заявка сохранена, но подтверждение доставки задержалось. Не отправляйте ее повторно, проверим доставку" : "Не получилось отправить. Попробуйте еще раз через минуту, бриф сохранен", animate: true },
+        { role: "studio", text: uncertain ? UNCERTAIN_MESSAGE : "Не получилось подтвердить отправку. Попробуйте еще раз через минуту, бриф и контакты остались в этой вкладке", animate: true },
       ]);
-      setS((st) => ({ ...st, entries: next(st.entries) }));
+      setS((st) => ({ ...st, entries: next(st.entries), deliveryRecovery: uncertain ? "uncertain" : st.deliveryRecovery }));
       setDraft(text);
     }
+  };
+
+  const prepareNewDelivery = () => {
+    if (s.deliveryRecovery !== "uncertain" || thinking || revealing || sending.current) return;
+    setConsented(false);
+    setHint("Проверьте контакты и подтвердите отправку еще раз");
+    setS(st => ({ ...st, sessionId: newSessionId(), deliveryRecovery: "prepared" }));
   };
 
   const restart = () => {
@@ -668,11 +680,16 @@ export function Intake() {
                   <p>Проверьте каждый символ. По этим данным мы свяжемся с вами</p>
                   <dl>{Object.entries(s.review.contacts).map(([kind,value]) => <div key={kind}><dt>{CONTACT_LABEL[kind as keyof Contacts]}</dt><dd>{value}</dd></div>)}</dl>
                   {s.review.contacts.phone && <fieldset><legend>Как связаться по номеру?</legend><div className="ci-options">{([["call","Позвонить"],["whatsapp","WhatsApp"],["telegram","Telegram"]] as const).map(([id,label]) => <button type="button" key={id} disabled={busy} aria-pressed={s.review?.phoneChannel === id} onClick={() => {setHint("");setConsented(false);setS(st => ({...st,review:st.review && {...st.review,phoneChannel:id}}));}}>{label}</button>)}</div>{s.review.phoneChannel === "telegram" && <p>Проверьте, что в Telegram вас можно найти по номеру. Или укажите @ник через «Изменить контакт»</p>}</fieldset>}
+                  {s.deliveryRecovery && <p role="status">{s.deliveryRecovery === "uncertain" ? "Доставка не подтверждена. Повторная отправка может создать дубль, если первая заявка уже дошла" : "Вы готовите повторную отправку. Если первая заявка уже дошла, у нас появится ее дубль"}</p>}
+                  {s.deliveryRecovery === "uncertain" ? (
+                    <button type="button" className="order-primary" disabled={busy} onClick={prepareNewDelivery}>Подготовить новую отправку</button>
+                  ) : <>
                   <label style={{ display: "flex", alignItems: "flex-start", gap: 10, fontSize: 14, lineHeight: 1.5, cursor: busy ? "default" : "pointer" }}>
                     <input type="checkbox" checked={consented} required disabled={busy} onChange={e => { setConsented(e.target.checked); setHint(""); }} style={{ flexShrink: 0, width: 18, height: 18, marginTop: 2, accentColor: "var(--brand)" }} />
                     <span>Согласен на обработку указанных данных для ответа по заявке</span>
                   </label>
                   <button type="button" className="order-primary" onClick={sendContact} disabled={busy || !consented || (!!s.review.contacts.phone && !s.review.phoneChannel)} aria-busy={thinking === "send"}>{thinking === "send" ? <>Отправляем заявку <BusyIcon /></> : "Все верно, отправить заявку"}</button>
+                  </>}
                   <button type="button" className="ci-link" disabled={busy} onClick={() => {setDraft(s.review!.note);setHint("");setConsented(false);setS(st=>({...st,phase:"contact",review:undefined}));}}>Изменить контакт</button>
                 </div>
               ) : phase !== "sent" ? (

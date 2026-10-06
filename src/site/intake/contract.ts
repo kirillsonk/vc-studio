@@ -83,4 +83,4 @@ export interface SubmitRequest {
   utm: Record<string, string>;
 }
 
-export type SubmitResponse = { ok: true; id: string; number: number } | { ok: false; error: string };
+export type SubmitResponse = { ok: true; id: string; number: number | string } | { ok: false; error: string };

@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { hasTelegram, telegramTarget } from './upstream';
 import { nextRequestSchema } from './intake';
 import type { Env } from './worker';
+import { intakeState, type Receipt } from './intake-state';
 import { detectContact } from '../src/site/intake/contacts';
 
 const contact = (kind: string) => z.string().max(200).refine(v => detectContact(v)?.kind === kind);
@@ -36,7 +37,7 @@ export async function discoverTelegram(env:Env,fetcher:typeof fetch) {
 }
 const escapeHtml = (s:string) => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 const CHANNEL = {call:'Звонок',whatsapp:'WhatsApp',telegram:'Telegram'};
-export function leadMessages(lead:Lead, receipt={number:1,created:Math.floor(Date.now()/1000)}) {
+export function leadMessages(lead:Lead, receipt:Receipt={number:1,created:Math.floor(Date.now()/1000)}) {
   const date=new Intl.DateTimeFormat('ru-RU',{timeZone:'Europe/Moscow',dateStyle:'short',timeStyle:'short'}).format(new Date(receipt.created*1000));
   const sections: Array<[string,string]> = [
     ['Контакты, подтверждены клиентом', Object.entries(lead.contacts).map(([k,v])=>`${{email:'Email',telegram:'Telegram',phone:'Телефон'}[k]}: ${v}`).join('\n') + (lead.phoneChannel ? `\nПо телефону: ${CHANNEL[lead.phoneChannel]}` : '')],
@@ -69,23 +70,19 @@ export function leadMessages(lead:Lead, receipt={number:1,created:Math.floor(Dat
   return chunks.map((part,i)=>`<b>Заявка №${String(receipt.number).padStart(3,'0')}</b>${chunks.length>1?` · ${i+1}/${chunks.length}`:''}\n${date} МСК\n\n${part}`);
 }
 export async function deliverLead(lead:Lead,env:Env,fetcher:typeof fetch,signal?:AbortSignal) {
-  if(!env.DB || !hasTelegram(env)) return {ok:false as const,error:'delivery_not_configured'};
+  const state = intakeState(env);
+  if(!state || !hasTelegram(env)) return {ok:false as const,error:'delivery_not_configured'};
   const now=Math.floor(Date.now()/1000);
-  const payload=JSON.stringify(lead);
-  const bytes=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(payload));
-  const hash=Array.from(new Uint8Array(bytes),b=>b.toString(16).padStart(2,'0')).join('');
-  await env.DB.prepare('DELETE FROM intake_leads WHERE expires < ?').bind(now).run();
-  await env.DB.prepare("INSERT INTO intake_leads (id, hash, payload, status, cursor, updated, expires) VALUES (?, ?, ?, 'pending', 0, ?, ?) ON CONFLICT(id) DO NOTHING").bind(lead.sessionId,hash,payload,now,now+30*86400).run();
-  const row=await env.DB.prepare('SELECT hash, status, cursor, updated FROM intake_leads WHERE id = ?').bind(lead.sessionId).first<{hash:string;status:string;cursor:number;updated:number}>();
-  if(!row || row.hash!==hash)return {ok:false as const,error:'submission_conflict'};
-  await env.DB.prepare('INSERT INTO intake_receipts (lead_id, created) SELECT ?, ? WHERE NOT EXISTS (SELECT 1 FROM intake_receipts WHERE lead_id = ?) ON CONFLICT(lead_id) DO NOTHING').bind(lead.sessionId,now,lead.sessionId).run();
-  const receipt=await env.DB.prepare('SELECT number, created FROM intake_receipts WHERE lead_id = ?').bind(lead.sessionId).first<{number:number;created:number}>();
-  if(!receipt) return {ok:false as const,error:'delivery_failed'};
-  if(row.status==='sent')return {ok:true as const,id:lead.sessionId,number:receipt.number};
-  // An interrupted send may have reached Telegram. Do not blindly resend it
-  if(row.status==='uncertain' || (row.status==='sending' && row.updated<now-60)) return {ok:false as const,error:'delivery_uncertain'};
-  const locked=await env.DB.prepare("UPDATE intake_leads SET status = 'sending', updated = ? WHERE id = ? AND status IN ('pending', 'failed') RETURNING cursor").bind(now,lead.sessionId).first<{cursor:number}>();
-  if(!locked)return {ok:false as const,error:'delivery_in_progress'};
+  const digest = async (value:string) => Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(value))),b=>b.toString(16).padStart(2,'0')).join('');
+  const hash=await digest(JSON.stringify(lead));
+  // Stable across process restarts, with a compact reference for Telegram only.
+  const code=(await digest(lead.sessionId)).slice(0,10).toUpperCase();
+  const locked=await state.claim(lead.sessionId,hash,`${code.slice(0,5)}-${code.slice(5)}`,now);
+  if(locked.status==='conflict')return {ok:false as const,error:'submission_conflict'};
+  if(locked.status==='sent')return {ok:true as const,id:lead.sessionId,number:locked.receipt.number};
+  if(locked.status==='uncertain')return {ok:false as const,error:'delivery_uncertain'};
+  if(locked.status==='in_progress')return {ok:false as const,error:'delivery_in_progress'};
+  const receipt=locked.receipt;
   try{
     const chunks=leadMessages(lead,receipt);
     const budget=AbortSignal.timeout(40_000);
@@ -100,13 +97,13 @@ export async function deliverLead(lead:Lead,env:Env,fetcher:typeof fetch,signal?
         response=await r.json() as {ok:boolean};
         if(!response.ok)throw new TelegramError(r.status>=500);
       } catch(error) {throw error instanceof TelegramError ? error : new TelegramError(true);}
-      await env.DB.prepare('UPDATE intake_leads SET cursor = ?, updated = ? WHERE id = ?').bind(i+1,Math.floor(Date.now()/1000),lead.sessionId).run();
+      await state.progress(lead.sessionId,i+1,Math.floor(Date.now()/1000));
     }
-    await env.DB.prepare("UPDATE intake_leads SET status = 'sent', updated = ? WHERE id = ?").bind(Math.floor(Date.now()/1000),lead.sessionId).run();
+    await state.finish(lead.sessionId,'sent',Math.floor(Date.now()/1000));
     return {ok:true as const,id:lead.sessionId,number:receipt.number};
   }catch(e){
     const uncertain=!(e instanceof TelegramError)||e.uncertain;
-    await env.DB.prepare('UPDATE intake_leads SET status = ?, updated = ? WHERE id = ?').bind(uncertain?'uncertain':'failed',Math.floor(Date.now()/1000),lead.sessionId).run();
+    await state.finish(lead.sessionId,uncertain?'uncertain':'failed',Math.floor(Date.now()/1000));
     return {ok:false as const,error:uncertain?'delivery_uncertain':'delivery_failed'};
   }
 }

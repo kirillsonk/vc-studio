@@ -1,6 +1,7 @@
 import { isIP } from "node:net";
 import { handle, type Env } from "./worker";
-import { runtimeDatabase } from "./node/postgres";
+import { runtimeState } from "./node/memory-state";
+import type { IntakeState } from "./intake-state";
 
 type RuntimeValues = Record<string, string | undefined>;
 const routes = new Map([
@@ -53,18 +54,18 @@ export function adaptRequest(request: Request, values: RuntimeValues) {
   });
 }
 
-export function runtimeEnv(values: RuntimeValues, database = runtimeDatabase(values.DATABASE_URL)): Env {
-  const env: Env = { DB: database };
+export function runtimeEnv(values: RuntimeValues, state = runtimeState()): Env {
+  const env: Env = { STATE: state };
   const names = ["CHATGPT_PLATFORM_API_KEY", "OPENAI_API_KEY", "OPENAI_MODEL", "RELAY_URL", "RELAY_SECRET", "RELAY_CLIENT", "YANDEX_METRIKA_ID", "TELEGRAM_BOT_TOKEN", "TELEGRAM_CHAT_ID"] as const;
   for (const name of names) if (values[name]) Object.assign(env, { [name]: values[name] });
   return env;
 }
 
-export async function routeRequest(request: Request, values: RuntimeValues = process.env, fetcher: typeof fetch = fetch, database?: Env["DB"]) {
+export async function routeRequest(request: Request, values: RuntimeValues = process.env, fetcher: typeof fetch = fetch, state?: IntakeState) {
   try {
     const adapted = adaptRequest(request, values);
     if (!adapted) return Response.json({ error: "not_found" }, { status: 404 });
-    const env = runtimeEnv(values, database);
+    const env = runtimeEnv(values, state);
     return await handle(adapted, env, fetcher);
   } catch {
     console.warn(JSON.stringify({ event: "intake", code: "node_runtime_unavailable" }));
