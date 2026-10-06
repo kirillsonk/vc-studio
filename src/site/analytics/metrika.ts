@@ -1,3 +1,5 @@
+// Public counter for sborkadigital.ru; the server environment may override or disable it
+export const METRIKA_COUNTER_ID = 113480948;
 export const GOALS = ['intake_open','intake_start','brief_ready','contact_review','lead_sent','demo_order'] as const;
 export type Goal = typeof GOALS[number];
 type YM = ((...args: unknown[]) => void) & {a?:unknown[][];l?:number};
@@ -32,10 +34,10 @@ export function startMetrika(value:unknown,path:string) {
   counter=validCounter(value);
   if(!counter){pending=[];return;}
   window.ym=window.ym||Object.assign((...args:unknown[])=>{(window.ym!.a ||= []).push(args);},{l:Date.now()});
-  send(counter,'init',{defer:true,webvisor:false,clickmap:false,trackLinks:false,trackHash:false,sendTitle:false,disableYtm:true,ecommerce:false,accurateTrackBounce:true});
+  send(counter,'init',{ssr:true,defer:true,webvisor:true,clickmap:true,trackLinks:true,trackHash:false,sendTitle:false,disableYtm:true,ecommerce:'dataLayer',accurateTrackBounce:true});
   pageView(path);
   const script=document.createElement('script');
-  script.src='https://mc.yandex.ru/metrika/tag.js';script.async=true;
+  script.src=`https://mc.yandex.ru/metrika/tag.js?id=${counter}`;script.async=true;
   document.head.appendChild(script);
   for(const goal of pending)trackGoal(goal);
   pending=[];

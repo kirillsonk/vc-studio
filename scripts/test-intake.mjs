@@ -191,13 +191,14 @@ await test("submit HTTP endpoint requires review and returns a numbered receipt"
   assert.equal((await handle(submit({...lead,contactConfirmed:false}),env,fake)).status,400);assert.equal(sends,0);
   const response=await handle(submit(lead),env,fake);assert.equal(response.status,200);assert.equal((await response.json()).number,1);assert.equal(sends,1);db.close();
 });
-await test("analytics is off without a counter and exposes no secrets in config",async()=>{
+await test("analytics uses the configured public counter, supports disabling and exposes no secrets",async()=>{
   const disabled=await import(pathToFileURL(join(temp,'metrika.js'))+'?disabled');
   disabled.startMetrika(null,'/');
   for(const value of [null,undefined,'',0,'123abc',-5])assert.equal(disabled.validCounter(value),null);
   const response=await handle(new Request('https://site.example/api/analytics/config'),{YANDEX_METRIKA_ID:'123456',CHATGPT_PLATFORM_API_KEY:'must-not-leak'});
   assert.deepEqual(await response.json(),{counterId:123456});
-  assert.deepEqual(await (await handle(new Request('https://site.example/api/analytics/config'),{})).json(),{counterId:null});
+  assert.deepEqual(await (await handle(new Request('https://site.example/api/analytics/config'),{})).json(),{counterId:113480948});
+  assert.deepEqual(await (await handle(new Request('https://site.example/api/analytics/config'),{YANDEX_METRIKA_ID:'0'})).json(),{counterId:null});
 });
 await test("analytics sends only allowed goals and sanitized page metadata",async()=>{
   const calls=[];const scripts=[];
@@ -208,10 +209,11 @@ await test("analytics sends only allowed goals and sanitized page metadata",asyn
     const analytics=await import(pathToFileURL(join(temp,'metrika.js'))+'?enabled');
     analytics.trackGoal('intake_start');analytics.trackGoal('private@example.com');
     analytics.startMetrika(123456,'/');analytics.pageView('/case');analytics.pageView('/case');analytics.trackGoal('lead_sent');analytics.startMetrika(123456,'/');
-    assert.equal(scripts.length,1);assert.equal(scripts[0].src,'https://mc.yandex.ru/metrika/tag.js');
+    assert.equal(scripts.length,1);assert.equal(scripts[0].src,'https://mc.yandex.ru/metrika/tag.js?id=123456');
     assert.equal(calls.filter(c=>c[1]==='hit').length,2);
     assert.deepEqual(calls.filter(c=>c[1]==='reachGoal').map(c=>c.slice(2)),[['intake_start'],['lead_sent']]);
-    assert.equal(calls[0][2].webvisor,false);assert.equal(calls[0][2].trackLinks,false);
+    assert.equal(calls[0][2].webvisor,true);assert.equal(calls[0][2].trackLinks,true);
+    assert.equal(calls[0][2].clickmap,true);assert.equal(calls[0][2].ecommerce,'dataLayer');
     assert.equal(JSON.stringify(calls).includes('private'),false);
     window.ym=()=>{throw Error('blocked');};assert.doesNotThrow(()=>analytics.trackGoal('lead_sent'));
   } finally {delete globalThis.window;delete globalThis.location;delete globalThis.document;}

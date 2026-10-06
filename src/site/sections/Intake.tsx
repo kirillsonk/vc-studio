@@ -164,6 +164,7 @@ function SummaryCard({
             <dd>
               {editing ? (
                 <textarea
+                  className="ym-disable-keys"
                   rows={1}
                   value={it.value}
                   aria-label={it.label}
@@ -481,7 +482,7 @@ export function Intake() {
             </div>
           </div>
 
-          <div className="ci-window ym-hide-content">
+          <div className="ci-window ym-hide-content ym-disable-clickmap">
             <div className="ci-head">
               <span className="assistant-avatar" aria-hidden="true">
                 <ThinkingAtom size={30} still={!thinking} />
@@ -556,13 +557,14 @@ export function Intake() {
                   <button type="button" className="ci-link" disabled={busy} onClick={() => {setDraft(s.review!.note);setHint("");setS(st=>({...st,phase:"contact",review:undefined}));}}>Изменить контакт</button>
                 </div>
               ) : phase !== "sent" ? (
-                <form className={`ci-bar${busy ? " is-busy" : ""}${phase === "contact" ? " ci-bar-contact" : ""}`} onSubmit={submit}>
+                <form className={`ci-bar ym-disable-submit${busy ? " is-busy" : ""}${phase === "contact" ? " ci-bar-contact" : ""}`} onSubmit={submit}>
                   <div className="ci-input">
                   {phase === "compose" && !draft && <>
                     <span className="ci-example ci-example-measure" aria-hidden="true">{EXAMPLES[1]}</span>
                     <span className="ci-example" aria-hidden="true">{focused ? "Опишите задачу своими словами" : placeholder}</span>
                   </>}
                   <textarea
+                    className="ym-disable-keys"
                     ref={input}
                     rows={1}
                     value={draft}

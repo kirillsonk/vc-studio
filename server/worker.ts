@@ -1,4 +1,4 @@
-import { validCounter } from "../src/site/analytics/metrika";
+import { METRIKA_COUNTER_ID, validCounter } from "../src/site/analytics/metrika";
 import { generateNext, ModelError, nextRequestSchema } from "./intake";
 import { deliverLead, discoverTelegram, submitSchema } from "./telegram";
 
@@ -58,7 +58,7 @@ export async function handle(request: Request, env: Env, fetcher: typeof fetch =
   const url = new URL(request.url);
   if(url.pathname === "/api/analytics/config") {
     if(request.method!=="GET")return json({error:"method_not_allowed"},405);
-    return json({counterId:validCounter(env.YANDEX_METRIKA_ID)});
+    return json({counterId:validCounter(env.YANDEX_METRIKA_ID ?? METRIKA_COUNTER_ID)});
   }
   if (url.pathname === "/api/admin/telegram") {
     if (!env.INTAKE_ADMIN_SECRET || request.headers.get("Authorization") !== `Bearer ${env.INTAKE_ADMIN_SECRET}`) return json({error:"not_found"},404);

@@ -14,6 +14,7 @@ const onest = Onest({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://sborkadigital.ru'),
   title: 'Сборка | Сайты и интерактив на скорости AI',
   description: 'Разрабатываем сайты, спецпроекты и веб-сервисы с AI для агентств и бизнеса. Дизайн, разработка, интеграции и запуск',
 };
