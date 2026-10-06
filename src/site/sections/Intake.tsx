@@ -4,8 +4,9 @@ import { Container } from "../Chrome";
 import { Arrow } from "../Arrow";
 import { STUDIO_EMAIL, STUDIO_TELEGRAM } from "../constants";
 import { SERVICES, serviceFromQuery } from "../brief";
-import { LIMITS, MAX_QUESTIONS, type Answer, type Question, type Summary, type Assessment, type Contacts, type PhoneChannel } from "../intake/contract";
-import { deliveryAvailable, INTAKE_MOCK, PRIVACY_URL, nextStep, submitBrief } from "../intake/client";
+import { LIMITS, MAX_QUESTIONS, type Answer, type Question, type Summary, type Assessment, type Contacts, type PhoneChannel, type NextRequest } from "../intake/contract";
+import { createNextPrefetch, deliveryAvailable, INTAKE_MOCK, PRIVACY_URL, nextRequestKey, nextStep, submitBrief } from "../intake/client";
+import { mockSummary } from "../intake/mock";
 import { CONTACT_LABEL, collectContacts, splitContacts, extractContacts, invalidTelegram } from "../intake/contacts";
 import { trackGoal } from "../analytics/metrika";
 import { ThinkingAtom } from "../intake/ThinkingAtom";
@@ -57,6 +58,20 @@ const initial = (): State => ({
 
 const reduceMotion = () =>
   typeof window !== "undefined" && matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+const requestFor = (base: State, force = false): NextRequest => ({
+  schemaVersion: 1,
+  sessionId: base.sessionId,
+  service: base.service,
+  task: base.task,
+  answers: base.answers,
+  forceSummary: force || base.answers.length >= MAX_QUESTIONS,
+});
+
+function meaningfulDraft(value: string, minimum: number) {
+  const text = value.replace(/\S+@\S+|(?:https?:\/\/)?(?:t\.me|telegram\.me)\/\S+|@\S+|(?:\+?\d[\s()-]*){10,15}/gi, " ").trim();
+  return text.length >= minimum && (text.match(/[\p{L}]{2,}/gu)?.length || 0) >= 3;
+}
 
 /** Types and erases example tasks while the field is empty and not focused */
 function useTypingPlaceholder(active: boolean) {
@@ -126,6 +141,10 @@ function SendIcon() {
   );
 }
 
+function BusyIcon() {
+  return <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true" style={{ flexShrink: 0, animation: reduceMotion() ? "none" : "vc-spin 0.8s linear infinite" }}><circle cx="12" cy="12" r="9" opacity="0.25" /><path d="M12 3a9 9 0 0 1 9 9" /></svg>;
+}
+
 function autosize(el: HTMLTextAreaElement | null) {
   if (!el) return;
   el.style.height = "auto";
@@ -136,12 +155,16 @@ function SummaryCard({
   summary,
   editable,
   onEdit,
+  onEditStart,
   delay,
+  refining,
 }: {
   summary: Summary;
   editable: boolean;
   onEdit: (i: number, value: string) => void;
+  onEditStart: () => void;
   delay?: number;
+  refining?: boolean;
 }) {
   const [editing, setEditing] = React.useState(false);
   React.useEffect(() => {
@@ -151,8 +174,9 @@ function SummaryCard({
     <li className="ci-card" style={{ animationDelay: `${delay ?? 0}ms` }}>
       <div className="ci-card-head">
         <h3>{summary.title}</h3>
+        {refining && <span role="status" aria-label="Уточняю бриф"><BusyIcon /></span>}
         {editable && (
-          <button type="button" className="ci-link" onClick={() => setEditing((v) => !v)}>
+          <button type="button" className="ci-link" onClick={() => { if (!editing) onEditStart(); setEditing((v) => !v); }}>
             {editing ? "Готово" : "Изменить"}
           </button>
         )}
@@ -196,10 +220,43 @@ export function Intake() {
   const [focused, setFocused] = React.useState(false);
   const [hint, setHint] = React.useState("");
   const [ready, setReady] = React.useState(false);
+  const [consented, setConsented] = React.useState(false);
+  const [summaryPending, setSummaryPending] = React.useState(false);
+  const [prefetch] = React.useState(createNextPrefetch);
+  const pendingRequest = React.useRef<AbortController | null>(null);
+  const requestEpoch = React.useRef(0);
+  const summaryEdits = React.useRef(0);
   const input = React.useRef<HTMLTextAreaElement>(null);
   const log = React.useRef<HTMLOListElement>(null);
   const knownContacts = extractContacts([s.task, ...s.answers.map(a => a.answer)].join("\n"));
   const placeholder = useTypingPlaceholder(s.phase === "compose" && !focused && !draft);
+
+  React.useEffect(() => () => {
+    requestEpoch.current += 1;
+    pendingRequest.current?.abort();
+    prefetch.cancel();
+  }, [prefetch]);
+
+  React.useEffect(() => {
+    let request: NextRequest | undefined;
+    if (ready && !thinking && !revealing) {
+      if (s.phase === "compose" && draft.length <= LIMITS.task && meaningfulDraft(draft, 24)) {
+        request = requestFor({ ...s, task: draft.trim() });
+      } else if (s.phase === "dialog" && s.question) {
+        const value = [...selected, draft.trim()].filter(Boolean).join("\n");
+        const backgroundSummary = !value && s.answers.length > 0;
+        if (value.length <= LIMITS.answer && (backgroundSummary || selected.length > 0 || meaningfulDraft(value, 16))) {
+          request = requestFor({ ...s, answers: [...s.answers, { question: s.question.question, answer: value }] }, backgroundSummary);
+        }
+      }
+    }
+    const key = request && nextRequestKey(request);
+    prefetch.cancelStale(key);
+    if (!request) return;
+    const stage = `${s.sessionId}:${s.phase}:${s.answers.length}`;
+    const timer = window.setTimeout(() => prefetch.start(request, stage), 1200);
+    return () => clearTimeout(timer);
+  }, [s, draft, selected, ready, thinking, revealing, prefetch]);
 
   // Restore the dialog of this tab and react to service links and CTA clicks
   React.useEffect(() => {
@@ -271,30 +328,60 @@ export function Intake() {
     return (entries: Entry[]) => [...entries.map(({ animate, ...e }) => e), ...added];
   };
 
-  const ask = async (base: State, force: boolean) => {
-    const final = force || base.answers.length >= MAX_QUESTIONS;
-    setThinking(final ? "summary" : "question");
-    const res = await nextStep({
-      schemaVersion: 1,
-      sessionId: base.sessionId,
-      service: base.service,
-      task: base.task,
-      answers: base.answers,
-      forceSummary: final,
-    });
-    setThinking(null);
+  const showSummary = (base: State, summary: Summary, assessment?: Assessment, message?: string) => {
+    trackGoal("brief_ready");
+    setConsented(false);
     const added: Entry[] = [];
-    if (res.message) added.push({ role: "studio", text: res.message, animate: true });
-    if (res.type === "question") {
-      added.push({ role: "studio", text: res.question, animate: true });
-      const next = push(added);
-      setS((st) => ({ ...st, entries: next(st.entries), question: { question: res.question, options: res.options } }));
+    if (message) added.push({ role: "studio", text: message, animate: true });
+    added.push({ role: "studio", text: "", kind: "summary", animate: true });
+    added.push({ role: "studio", text: extractContacts([base.task, ...base.answers.map(a => a.answer)].join("\n")).length ? "Контакт уже есть в переписке. Проверьте бриф, затем подтвердите данные для связи" : CONTACT_QUESTION, animate: true });
+    const next = push(added);
+    setS((st) => ({ ...st, entries: next(st.entries), question: null, summary, assessment, phase: "contact" }));
+  };
+
+  const ask = async (base: State, force: boolean) => {
+    const request = requestFor(base, force);
+    const final = request.forceSummary;
+    const epoch = ++requestEpoch.current;
+    const editVersion = summaryEdits.current;
+    pendingRequest.current?.abort();
+    const controller = new AbortController();
+    pendingRequest.current = controller;
+    const cached = prefetch.take(request);
+    if (final) {
+      const readySummary = cached?.result?.type === "summary" ? cached.result : undefined;
+      showSummary(base, readySummary?.summary || mockSummary(request), readySummary?.assessment);
+      setSummaryPending(!readySummary);
     } else {
-      trackGoal("brief_ready");
-      added.push({ role: "studio", text: "", kind: "summary", animate: true });
-      added.push({ role: "studio", text: extractContacts([base.task, ...base.answers.map(a => a.answer)].join("\n")).length ? "Контакт уже есть в переписке. Проверьте бриф, затем подтвердите данные для связи" : CONTACT_QUESTION, animate: true });
-      const next = push(added);
-      setS((st) => ({ ...st, entries: next(st.entries), question: null, summary: res.summary, assessment: res.assessment, phase: "contact" }));
+      setThinking("question");
+    }
+    try {
+      const res = cached?.result || (await cached?.promise) || await nextStep(request, controller.signal);
+      if (controller.signal.aborted || epoch !== requestEpoch.current) return;
+      if (final) {
+        // A background result may refine only an untouched draft, before contact review.
+        if (res.type === "summary" && summaryEdits.current === editVersion) {
+          setS(st => st.sessionId === base.sessionId && st.phase === "contact"
+            ? { ...st, summary: res.summary, assessment: res.assessment }
+            : st);
+        }
+      } else if (res.type === "question") {
+        const added: Entry[] = [];
+        if (res.message) added.push({ role: "studio", text: res.message, animate: true });
+        added.push({ role: "studio", text: res.question, animate: true });
+        const next = push(added);
+        setS(st => ({ ...st, entries: next(st.entries), question: { question: res.question, options: res.options } }));
+      } else {
+        showSummary(base, res.summary, res.assessment, res.message);
+      }
+    } catch {
+      // Cancellation leaves the visible draft intact; transport failures use the local scenario.
+    } finally {
+      if (epoch === requestEpoch.current) {
+        if (!final) setThinking(null);
+        setSummaryPending(false);
+        if (pendingRequest.current === controller) pendingRequest.current = null;
+      }
     }
   };
 
@@ -335,6 +422,11 @@ export function Intake() {
     }
     const found = splitContacts(raw);
     if (!found.length) { setHint("Не похоже на email, Telegram или телефон. Проверьте, пожалуйста"); return; }
+    summaryEdits.current += 1;
+    pendingRequest.current?.abort();
+    prefetch.cancel();
+    setSummaryPending(false);
+    setConsented(false);
     setHint("");
     trackGoal("contact_review");
     setS(st => ({...st, phase:"review", review:{contacts:collectContacts(found.map(c=>c.value)),note:raw}}));
@@ -343,13 +435,16 @@ export function Intake() {
   const sending = React.useRef(false);
   const sendContact = async () => {
     if (!s.summary || !s.review || thinking || revealing || sending.current) return;
+    if (!consented) { setHint("Подтвердите согласие на обработку данных перед отправкой"); return; }
     if (s.review.contacts.phone && !s.review.phoneChannel) {setHint("Выберите, как связаться по номеру");return;}
     sending.current = true;
+    setThinking("send");
     const {contacts, note, phoneChannel} = s.review;
     const available = deliveryEnabled || await deliveryAvailable();
     setDeliveryEnabled(available);
     if (!available) {
       setHint("Отправка временно недоступна. Бриф и контакт останутся в этой вкладке, попробуйте позже");
+      setThinking(null);
       sending.current = false;
       return;
     }
@@ -357,7 +452,6 @@ export function Intake() {
     setHint("");
     setDraft("");
     setS((st) => ({ ...st, entries: [...st.entries.map(({ animate, ...e }) => e), { role: "client", text }] }));
-    setThinking("send");
     const res = await submitBrief({
       schemaVersion: 1,
       sessionId: s.sessionId,
@@ -377,6 +471,7 @@ export function Intake() {
     setThinking(null);
     sending.current = false;
     if (res.ok) {
+      setConsented(false);
       trackGoal("lead_sent");
       const next = push([
         {
@@ -398,6 +493,14 @@ export function Intake() {
   };
 
   const restart = () => {
+    requestEpoch.current += 1;
+    summaryEdits.current += 1;
+    pendingRequest.current?.abort();
+    prefetch.reset();
+    setSummaryPending(false);
+    setConsented(false);
+    setThinking(null);
+    setRevealing(false);
     setS(initial());
     setSelected([]);
     setDraft("");
@@ -405,7 +508,16 @@ export function Intake() {
     requestAnimationFrame(() => input.current?.focus());
   };
 
-  const editItem = (i: number, value: string) =>
+  const freezeSummary = () => {
+    summaryEdits.current += 1;
+    pendingRequest.current?.abort();
+    prefetch.cancel();
+    setSummaryPending(false);
+    setConsented(false);
+  };
+
+  const editItem = (i: number, value: string) => {
+    freezeSummary();
     setS((st) =>
       st.summary
         ? {
@@ -417,6 +529,7 @@ export function Intake() {
           }
         : st,
     );
+  };
 
   const { phase } = s;
   const busy = !!thinking || revealing;
@@ -435,6 +548,8 @@ export function Intake() {
   const status =
     thinking === "send"
       ? "Отправляет бриф"
+      : summaryPending
+        ? "Уточняет бриф"
       : thinking
         ? "Думает"
         : phase === "compose"
@@ -502,7 +617,7 @@ export function Intake() {
               <li className="ci-msg ci-studio">{GREETING}</li>
               {s.entries.map((e, i) =>
                 e.kind === "summary" && s.summary ? (
-                  <SummaryCard key={i} summary={s.summary} editable={phase === "contact" && !busy} onEdit={editItem} delay={e.animate ? delays[i] : 0} />
+                  <SummaryCard key={i} summary={s.summary} editable={phase === "contact" && !busy} onEdit={editItem} onEditStart={freezeSummary} refining={summaryPending} delay={e.animate ? delays[i] : 0} />
                 ) : (
                   <li key={i} className={`ci-msg ci-${e.role}${e.muted ? " is-muted" : ""}`}>
                     {i === 0 && s.service && <span className="ci-tag">{s.service}</span>}
@@ -552,9 +667,13 @@ export function Intake() {
                   <h3>Все верно?</h3>
                   <p>Проверьте каждый символ. По этим данным мы свяжемся с вами</p>
                   <dl>{Object.entries(s.review.contacts).map(([kind,value]) => <div key={kind}><dt>{CONTACT_LABEL[kind as keyof Contacts]}</dt><dd>{value}</dd></div>)}</dl>
-                  {s.review.contacts.phone && <fieldset><legend>Как связаться по номеру?</legend><div className="ci-options">{([["call","Позвонить"],["whatsapp","WhatsApp"],["telegram","Telegram"]] as const).map(([id,label]) => <button type="button" key={id} disabled={busy} aria-pressed={s.review?.phoneChannel === id} onClick={() => {setHint("");setS(st => ({...st,review:st.review && {...st.review,phoneChannel:id}}));}}>{label}</button>)}</div>{s.review.phoneChannel === "telegram" && <p>Проверьте, что в Telegram вас можно найти по номеру. Или укажите @ник через «Изменить контакт»</p>}</fieldset>}
-                  <button type="button" className="order-primary" onClick={sendContact} disabled={busy || (!!s.review.contacts.phone && !s.review.phoneChannel)}>Все верно, отправить заявку</button>
-                  <button type="button" className="ci-link" disabled={busy} onClick={() => {setDraft(s.review!.note);setHint("");setS(st=>({...st,phase:"contact",review:undefined}));}}>Изменить контакт</button>
+                  {s.review.contacts.phone && <fieldset><legend>Как связаться по номеру?</legend><div className="ci-options">{([["call","Позвонить"],["whatsapp","WhatsApp"],["telegram","Telegram"]] as const).map(([id,label]) => <button type="button" key={id} disabled={busy} aria-pressed={s.review?.phoneChannel === id} onClick={() => {setHint("");setConsented(false);setS(st => ({...st,review:st.review && {...st.review,phoneChannel:id}}));}}>{label}</button>)}</div>{s.review.phoneChannel === "telegram" && <p>Проверьте, что в Telegram вас можно найти по номеру. Или укажите @ник через «Изменить контакт»</p>}</fieldset>}
+                  <label style={{ display: "flex", alignItems: "flex-start", gap: 10, fontSize: 14, lineHeight: 1.5, cursor: busy ? "default" : "pointer" }}>
+                    <input type="checkbox" checked={consented} required disabled={busy} onChange={e => { setConsented(e.target.checked); setHint(""); }} style={{ flexShrink: 0, width: 18, height: 18, marginTop: 2, accentColor: "var(--brand)" }} />
+                    <span>Согласен на обработку указанных данных для ответа по заявке</span>
+                  </label>
+                  <button type="button" className="order-primary" onClick={sendContact} disabled={busy || !consented || (!!s.review.contacts.phone && !s.review.phoneChannel)} aria-busy={thinking === "send"}>{thinking === "send" ? <>Отправляем заявку <BusyIcon /></> : "Все верно, отправить заявку"}</button>
+                  <button type="button" className="ci-link" disabled={busy} onClick={() => {setDraft(s.review!.note);setHint("");setConsented(false);setS(st=>({...st,phase:"contact",review:undefined}));}}>Изменить контакт</button>
                 </div>
               ) : phase !== "sent" ? (
                 <form className={`ci-bar ym-disable-submit${busy ? " is-busy" : ""}${phase === "contact" ? " ci-bar-contact" : ""}`} onSubmit={submit}>
@@ -589,9 +708,9 @@ export function Intake() {
                   {detected.length > 0 && (
                     <span className="ci-kind">{detected.map((c) => CONTACT_LABEL[c.kind]).join(" и ")}</span>
                   )}
-                  <button type="submit" disabled={(!(phase === "dialog" ? answerText.trim() : draft.trim()) && !(phase === "contact" && knownContacts.length)) || busy || length > limit} aria-label={phase === "contact" ? "Проверить контакт" : "Отправить"}>
+                  <button type="submit" disabled={(!(phase === "dialog" ? answerText.trim() : draft.trim()) && !(phase === "contact" && knownContacts.length)) || busy || length > limit} aria-label={phase === "contact" ? "Проверить контакт" : "Отправить"} aria-busy={!!thinking}>
                     {phase === "contact" && <span>Проверить контакт</span>}
-                    <SendIcon />
+                    {thinking ? <BusyIcon /> : <SendIcon />}
                   </button>
                 </form>
               ) : (

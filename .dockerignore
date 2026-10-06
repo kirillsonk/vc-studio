@@ -1,0 +1,15 @@
+node_modules
+.next
+out
+dist
+preview
+.git
+.env*
+.dev.vars*
+.codex
+.agents
+.openai
+.wrangler
+*.tsbuildinfo
+*.log
+.DS_Store

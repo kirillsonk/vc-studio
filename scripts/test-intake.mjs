@@ -8,7 +8,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 const temp = await mkdtemp(join(tmpdir(), "sborka-test-"));
-await build({ entryPoints: ["server/intake.ts", "server/worker.ts", "server/telegram.ts", "src/site/intake/contacts.ts", "src/site/intake/mock.ts", "src/site/demos/order-model.ts", "src/site/analytics/metrika.ts"], outdir: temp, entryNames:"[name]", bundle: true, format: "esm", platform: "node" });
+await build({ entryPoints: ["server/intake.ts", "server/worker.ts", "server/telegram.ts", "server/upstream.ts", "src/site/intake/contacts.ts", "src/site/intake/mock.ts", "src/site/demos/order-model.ts", "src/site/analytics/metrika.ts"], outdir: temp, entryNames:"[name]", bundle: true, format: "esm", platform: "node" });
 const { nextRequestSchema, generateNext, cleanCopy } = await import(pathToFileURL(join(temp, "intake.js")));
 const { handle, consumeLimit } = await import(pathToFileURL(join(temp, "worker.js")));
 const req = { schemaVersion: 1, sessionId: "test-session-123456", service: null, task: "Нужен сайт", answers: [], forceSummary: false };
@@ -90,7 +90,7 @@ await test("HTTP gateway validates origin and content, hides failures, disables 
 });
 await test("HTTP limits requests before OpenAI and stores no raw IP or task", async () => {
   const { env, db } = await database();
-  for (let i = 0; i < 30; i++) assert.equal((await handle(request(), env, upstream(question))).status, 200);
+  for (let i = 0; i < 24; i++) assert.equal((await handle(request(), env, upstream(question))).status, 200);
   const response = await handle(request(), env, () => { throw new Error("must not call"); });
   assert.equal(response.status, 429);
   assert.ok(Number(response.headers.get("Retry-After")) > 0);
@@ -217,5 +217,88 @@ await test("analytics sends only allowed goals and sanitized page metadata",asyn
     assert.equal(JSON.stringify(calls).includes('private'),false);
     window.ym=()=>{throw Error('blocked');};assert.doesNotThrow(()=>analytics.trackGoal('lead_sent'));
   } finally {delete globalThis.window;delete globalThis.location;delete globalThis.document;}
+});
+const {hasAi,hasTelegram,requestAi}=await import(pathToFileURL(join(temp,'upstream.js')));
+const relayEnv={RELAY_URL:'https://relay.example',RELAY_SECRET:'r'.repeat(48),RELAY_CLIENT:'sborka',OPENAI_API_KEY:'must-stay-local',TELEGRAM_BOT_TOKEN:'must-stay-local',TELEGRAM_CHAT_ID:'-ignored'};
+await test('relay routes AI with full conversation, strict schema and no upstream credentials',async()=>{
+  let calls=0;
+  const previous={question:'Кому нужен сайт?',answer:'Покупателям магазина'};
+  const result=await generateNext({...req,answers:[previous]},{...relayEnv,OPENAI_MODEL:'configured-model'},async(url,options)=>{
+    calls++;
+    assert.equal(url,'https://relay.example/openai/v1/responses');
+    assert.equal(options.headers['X-Relay-Client'],'sborka');
+    assert.equal(options.headers['X-Relay-Secret'],relayEnv.RELAY_SECRET);
+    assert.equal(JSON.stringify(options).includes('must-stay-local'),false);
+    const sent=JSON.parse(options.body);
+    assert.equal(sent.model,'configured-model');
+    assert.equal(sent.store,false);
+    assert.equal(sent.text.format.strict,true);
+    for(const known of [req.task,previous.question,previous.answer]) assert.ok(JSON.stringify(sent.input).includes(known));
+    return upstream(question)();
+  });
+  assert.equal(calls,1);assert.equal(result.type,'question');
+});
+await test('partial or invalid relay config fails closed instead of using direct credentials',async()=>{
+  for(const env of [{...relayEnv,RELAY_SECRET:''},{...relayEnv,RELAY_URL:''},{...relayEnv,RELAY_URL:'http://relay.example'},{...relayEnv,RELAY_CLIENT:'bad/client'}]){
+    assert.equal(hasAi(env),false);assert.equal(hasTelegram(env),false);
+    await assert.rejects(()=>requestAi(env,{},()=>{throw Error('must not call');}));
+  }
+});
+await test('AI retries once for fast transient failures, never for timeout or auth errors',async()=>{
+  for(const status of [429,502]){
+    let calls=0;
+    const result=await requestAi(relayEnv,{},async()=>++calls===1?Response.json({},{status}):Response.json({ok:true}));
+    assert.equal(calls,2);assert.equal(result.ok,true);
+  }
+  let calls=0;
+  await requestAi(relayEnv,{},async()=>{calls++;return Response.json({},{status:401});});
+  assert.equal(calls,1);
+  calls=0;
+  await assert.rejects(()=>requestAi(relayEnv,{},async()=>{calls++;throw new DOMException('Timed out','TimeoutError');}));
+  assert.equal(calls,1);
+  calls=0;
+  const retried=await requestAi(relayEnv,{},async()=>{if(++calls===1)throw new TypeError('network');return Response.json({ok:true});});
+  assert.equal(retried.ok,true);assert.equal(calls,2);
+});
+await test('relay delivers confirmed HTML lead without allowing browser to choose a chat',async()=>{
+  const {env,db}=await database();Object.assign(env,relayEnv);
+  let calls=0;
+  const fetcher=async(url,options)=>{
+    calls++;assert.equal(url,'https://relay.example/telegram/sendMessage');
+    const sent=JSON.parse(options.body);
+    assert.equal(sent.parse_mode,'HTML');assert.equal('chat_id' in sent,false);
+    assert.equal(options.headers['X-Relay-Client'],'sborka');
+    assert.equal(JSON.stringify(options).includes('must-stay-local'),false);
+    return Response.json({ok:true,result:{message_id:123}});
+  };
+  assert.equal((await deliverLead(lead,env,fetcher)).ok,true);
+  assert.equal((await deliverLead(lead,env,fetcher)).ok,true);
+  assert.equal(calls,1);db.close();
+});
+await test('requests without a trusted IP share a bounded global rate limit',async()=>{
+  const {env,db}=await database();
+  const anonymous=()=>request(req,{headers:{Origin:'https://site.example','Content-Type':'application/json'}});
+  for(let i=0;i<90;i++)assert.equal((await handle(anonymous(),env,upstream(question))).status,200);
+  assert.equal((await handle(anonymous(),env,()=>{throw Error('must not call');})).status,429);
+  db.close();
+});
+await test('oversized full context falls back without sending or silently truncating it',async()=>{
+  await assert.rejects(()=>requestAi(relayEnv,{input:'ж'.repeat(40000)},()=>{throw Error('must not call');}),/model_context_budget/);
+});
+await test('cancelled lead resumes safely before sending the next chunk',async()=>{
+  const {env,db}=await database();Object.assign(env,relayEnv);
+  const ctrl=new AbortController();ctrl.abort();let sent=0;
+  const fetcher=async(url,options)=>{sent++;assert.equal(options.redirect,'error');return Response.json({ok:true,result:{message_id:1}});};
+  assert.equal((await deliverLead(lead,env,fetcher,ctrl.signal)).error,'delivery_failed');
+  assert.equal(sent,0);
+  assert.equal((await deliverLead(lead,env,fetcher)).ok,true);assert.equal(sent,1);db.close();
+});
+await test('cancellation during Telegram send marks uncertainty and prevents automatic duplicates',async()=>{
+  const {env,db}=await database();Object.assign(env,relayEnv);
+  const ctrl=new AbortController();let sent=0;
+  const result=await deliverLead(lead,env,async(url,options)=>{sent++;ctrl.abort();options.signal.throwIfAborted();},ctrl.signal);
+  assert.equal(result.error,'delivery_uncertain');
+  assert.equal((await deliverLead(lead,env,()=>{throw Error('must not resend');})).error,'delivery_uncertain');
+  assert.equal(sent,1);db.close();
 });
 await rm(temp, { recursive: true, force: true });

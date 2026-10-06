@@ -13,8 +13,6 @@ export function VCMotion() {
     return () => query.removeEventListener("change", update);
   }, []);
   const [allowed, setAllowed] = useState(false);
-  const [paused, setPaused] = useState(false);
-  const active = allowed && !paused;
   useEffect(() => {
     const preference = matchMedia("(prefers-reduced-motion: reduce)");
     const update = () => setAllowed(!preference.matches);
@@ -25,7 +23,7 @@ export function VCMotion() {
   useEffect(() => {
     const host = anchor.current,
       surface = canvas.current;
-    if (!active || !host || !surface) return;
+    if (!allowed || !host || !surface) return;
     let cancelled = false;
     let cleanup: (() => void) | undefined;
     import("./motion/scene")
@@ -45,7 +43,7 @@ export function VCMotion() {
       cancelled = true;
       cleanup?.();
     };
-  }, [active, compact]);
+  }, [allowed, compact]);
   return (
     <div ref={anchor} className="production-art vc-art">
       <div className="vc-halo" aria-hidden="true" />
@@ -61,33 +59,7 @@ export function VCMotion() {
         aria-hidden="true"
       />
       </picture>
-      {allowed && (
-        <button
-          className="motion-toggle"
-          type="button"
-          aria-label={
-            paused
-              ? "Включить анимацию знака"
-              : "Остановить анимацию логотипа"
-          }
-          aria-pressed={paused}
-          onClick={() => setPaused((value) => !value)}
-          title={paused ? "Включить движение" : "Остановить движение"}
-        >
-          <svg viewBox="0 0 20 20" width="18" height="18" aria-hidden="true">
-            {paused ? (
-              <path d="m6 4 9 6-9 6z" fill="currentColor" />
-            ) : (
-              <path
-                d="M7 4v12M13 4v12"
-                stroke="currentColor"
-                strokeWidth="1.5"
-              />
-            )}
-          </svg>
-        </button>
-      )}
-      {active &&
+      {allowed &&
         createPortal(
           <canvas
             ref={canvas}

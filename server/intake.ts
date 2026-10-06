@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { requestAi, type UpstreamEnv } from "./upstream";
 import { LIMITS, MAX_QUESTIONS, type NextResponse } from "../src/site/intake/contract";
 
 const text = (max: number) => z.string().max(max);
@@ -92,7 +93,7 @@ export class ModelError extends Error {
   constructor(public code: string, public upstreamStatus?: number) { super(code); }
 }
 
-export async function generateNext(input: RequestData, key: string, fetcher: typeof fetch = fetch): Promise<NextResponse> {
+export async function generateNext(input: RequestData, key: string | UpstreamEnv, fetcher: typeof fetch = fetch, signal?: AbortSignal): Promise<NextResponse> {
   const force = input.forceSummary || input.answers.length >= MAX_QUESTIONS;
   const schema = z.toJSONSchema(force ? modelSchema.extend({ turn: summaryTurn }) : modelSchema);
   // Do not transmit the browser session id or any extra request properties to OpenAI
@@ -102,20 +103,16 @@ export async function generateNext(input: RequestData, key: string, fetcher: typ
     answers: input.answers.map(a => ({ question: redactContacts(a.question), answer: redactContacts(a.answer) })),
     forceSummary: force,
   };
-  const response = await fetcher("https://api.openai.com/v1/responses", {
-    method: "POST",
-    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-    signal: AbortSignal.timeout(15000),
-    body: JSON.stringify({
-      model: "gpt-5.4-mini", store: false, reasoning: { effort: "none" }, temperature: 0.2,
-      max_output_tokens: 1500,
-      instructions: SYSTEM_PROMPT,
-      input: [{ role: "user", content: JSON.stringify(data) }],
-      text: { format: { type: "json_schema", name: "intake_next", strict: true, schema } },
-    }),
-  });
+  const env = typeof key === "string" ? { CHATGPT_PLATFORM_API_KEY: key } : key;
+  const response = await requestAi(env, {
+    model: env.OPENAI_MODEL || "gpt-5.4-mini", store: false, reasoning: { effort: "none" }, temperature: 0.2,
+    max_output_tokens: 1500,
+    instructions: SYSTEM_PROMPT,
+    input: [{ role: "user", content: JSON.stringify(data) }],
+    text: { format: { type: "json_schema", name: "intake_next", strict: true, schema } },
+  }, fetcher, signal);
   if (!response.ok) throw new ModelError("upstream_http", response.status);
-  const result = await response.json() as { status?: string; output?: Array<{ type: string; content?: Array<{ type: string; text?: string }> }> };
+  const result = response.data as { status?: string; output?: Array<{ type: string; content?: Array<{ type: string; text?: string }> }> };
   if (result.status !== "completed") throw new ModelError("incomplete");
   const content = result.output?.filter(o => o.type === "message").flatMap(o => o.content || []) || [];
   if (content.some(c => c.type === "refusal")) throw new ModelError("refusal");

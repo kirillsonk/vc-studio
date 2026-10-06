@@ -10,7 +10,7 @@ export function Footer() {
             сборка<span className="wordmark-mark" aria-hidden="true" />
           </Link>
           <p>
-            AI ускоряет код
+            <span>AI ускоряет код.</span>
             <br />
             Мы отвечаем за продукт
           </p>

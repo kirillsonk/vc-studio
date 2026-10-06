@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { hasTelegram, telegramTarget } from './upstream';
 import { nextRequestSchema } from './intake';
 import type { Env } from './worker';
 import { detectContact } from '../src/site/intake/contacts';
@@ -67,8 +68,8 @@ export function leadMessages(lead:Lead, receipt={number:1,created:Math.floor(Dat
   if(chunk)chunks.push(chunk);
   return chunks.map((part,i)=>`<b>Заявка №${String(receipt.number).padStart(3,'0')}</b>${chunks.length>1?` · ${i+1}/${chunks.length}`:''}\n${date} МСК\n\n${part}`);
 }
-export async function deliverLead(lead:Lead,env:Env,fetcher:typeof fetch) {
-  if(!env.DB || !env.TELEGRAM_BOT_TOKEN || !env.TELEGRAM_CHAT_ID) return {ok:false as const,error:'delivery_not_configured'};
+export async function deliverLead(lead:Lead,env:Env,fetcher:typeof fetch,signal?:AbortSignal) {
+  if(!env.DB || !hasTelegram(env)) return {ok:false as const,error:'delivery_not_configured'};
   const now=Math.floor(Date.now()/1000);
   const payload=JSON.stringify(lead);
   const bytes=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(payload));
@@ -87,8 +88,18 @@ export async function deliverLead(lead:Lead,env:Env,fetcher:typeof fetch) {
   if(!locked)return {ok:false as const,error:'delivery_in_progress'};
   try{
     const chunks=leadMessages(lead,receipt);
+    const budget=AbortSignal.timeout(40_000);
+    const deliverySignal=signal ? AbortSignal.any([budget,signal]) : budget;
     for(let i=locked.cursor;i<chunks.length;i++){
-      await call(env.TELEGRAM_BOT_TOKEN,'sendMessage',{chat_id:env.TELEGRAM_CHAT_ID,text:chunks[i],parse_mode:"HTML",link_preview_options:{is_disabled:true}},fetcher);
+      // No current request was sent, so a retry can safely resume at the cursor.
+      if(deliverySignal.aborted)throw new TelegramError(false);
+      const target = telegramTarget(env,chunks[i]);
+      let response;
+      try {
+        const r=await fetcher(target.url,{method:'POST',redirect:'error',headers:{'Content-Type':'application/json',...target.headers},body:JSON.stringify(target.body),signal:AbortSignal.any([deliverySignal,AbortSignal.timeout(30_000)])});
+        response=await r.json() as {ok:boolean};
+        if(!response.ok)throw new TelegramError(r.status>=500);
+      } catch(error) {throw error instanceof TelegramError ? error : new TelegramError(true);}
       await env.DB.prepare('UPDATE intake_leads SET cursor = ?, updated = ? WHERE id = ?').bind(i+1,Math.floor(Date.now()/1000),lead.sessionId).run();
     }
     await env.DB.prepare("UPDATE intake_leads SET status = 'sent', updated = ? WHERE id = ?").bind(Math.floor(Date.now()/1000),lead.sessionId).run();

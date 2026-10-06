@@ -1,4 +1,5 @@
 import { METRIKA_COUNTER_ID, validCounter } from "../src/site/analytics/metrika";
+import { hasAi, hasTelegram, rateSecret, type UpstreamEnv } from "./upstream";
 import { generateNext, ModelError, nextRequestSchema } from "./intake";
 import { deliverLead, discoverTelegram, submitSchema } from "./telegram";
 
@@ -7,7 +8,7 @@ interface Statement {
   first<T>(): Promise<T | null>;
   run(): Promise<unknown>;
 }
-export interface Env {
+export interface Env extends UpstreamEnv {
   CHATGPT_PLATFORM_API_KEY?: string;
   YANDEX_METRIKA_ID?: string;
   TELEGRAM_BOT_TOKEN?: string;
@@ -68,7 +69,7 @@ export async function handle(request: Request, env: Env, fetcher: typeof fetch =
   if (!url.pathname.startsWith("/api/intake/")) {
     return env.ASSETS ? env.ASSETS.fetch(request) : new Response("Not found", { status: 404 });
   }
-  if (url.pathname === "/api/intake/config" && request.method === "GET") return json({delivery:!!(env.TELEGRAM_BOT_TOKEN && env.TELEGRAM_CHAT_ID && env.DB)});
+  if (url.pathname === "/api/intake/config" && request.method === "GET") return json({delivery:!!(hasTelegram(env) && env.DB)});
   if (url.pathname !== "/api/intake/next" && url.pathname !== "/api/intake/submit") return json({ error: "not_found" }, 404);
   if (request.method !== "POST") return json({ error: "method_not_allowed" }, 405, { Allow: "POST" });
   // JSON + same-origin checks block drive-by cross-site forms. They supplement rate limits
@@ -76,27 +77,27 @@ export async function handle(request: Request, env: Env, fetcher: typeof fetch =
   if (!origin || origin !== url.origin || request.headers.get("Sec-Fetch-Site") === "cross-site") return json({ error: "origin" }, 403);
   if (request.headers.get("Content-Type")?.split(";")[0].trim() !== "application/json") return json({ error: "content_type" }, 415);
   if (url.pathname.endsWith("/submit")) {
-    if (!env.TELEGRAM_BOT_TOKEN || !env.TELEGRAM_CHAT_ID) return json({ok:false,error:"delivery_not_configured"},503);
+    if (!hasTelegram(env)) return json({ok:false,error:"delivery_not_configured"},503);
     let lead;
     try { lead = submitSchema.parse(await readBody(request)); } catch { return json({ok:false,error:"invalid_request"},400); }
     try {
-      const id = await fingerprint(request.headers.get("CF-Connecting-IP") || "unknown", env.TELEGRAM_BOT_TOKEN);
+      const id = await fingerprint(request.headers.get("CF-Connecting-IP") || "unknown", rateSecret(env));
       const rate = await consumeLimit(env,`submit:${id}`,5,3600);
       if (!rate.allowed) return json({ok:false,error:"rate_limit"},429,{"Retry-After":String(rate.retry)});
-      const result = await deliverLead(lead,env,fetcher);
+      const result = await deliverLead(lead,env,fetcher,request.signal);
       return json(result,result.ok?200:503);
     } catch { return json({ok:false,error:"temporarily_unavailable"},503); }
   }
   let input;
   try { input = nextRequestSchema.parse(await readBody(request)); }
   catch { return json({ error: "invalid_request" }, 400); }
-  const key = env.CHATGPT_PLATFORM_API_KEY;
-  if (!key) return json({ error: "model_unavailable" }, 502);
+  const key = rateSecret(env);
+  if (!hasAi(env)) return json({ error: "model_unavailable" }, 502);
   try {
     // Trust only Cloudflare's edge-supplied address, never an arbitrary X-Forwarded-For
     const ip = request.headers.get("CF-Connecting-IP") || "unknown";
     const id = await fingerprint(ip, key);
-    const rate = await consumeLimit(env, `ip:${id}`, 30, 600);
+    const rate = await consumeLimit(env, `ip:${id}`, ip === "unknown" ? 90 : 24, 60);
     if (!rate.allowed) return json({ error: "rate_limit" }, 429, { "Retry-After": String(rate.retry) });
     const daily = await consumeLimit(env, "global", 1000, 86400);
     if (!daily.allowed) return json({ error: "rate_limit" }, 429, { "Retry-After": String(daily.retry) });
@@ -105,7 +106,7 @@ export async function handle(request: Request, env: Env, fetcher: typeof fetch =
     console.warn(JSON.stringify({ event: "intake", code: "storage_unavailable" }));
     return json({ error: "temporarily_unavailable" }, 503);
   }
-  try { return json(await generateNext(input, key, fetcher)); }
+  try { return json(await generateNext(input, env, fetcher, request.signal)); }
   catch (error) {
     console.warn(JSON.stringify({ event: "intake", code: error instanceof ModelError ? error.code : "model_failure", status: error instanceof ModelError ? error.upstreamStatus : undefined }));
     return json({ error: "model_unavailable" }, 502);
