@@ -105,7 +105,7 @@ export async function generateNext(input: RequestData, key: string | UpstreamEnv
   };
   const env = typeof key === "string" ? { CHATGPT_PLATFORM_API_KEY: key } : key;
   const response = await requestAi(env, {
-    model: env.OPENAI_MODEL || "gpt-5.4-mini", store: false, reasoning: { effort: "none" }, temperature: 0.2,
+    model: env.OPENAI_MODEL || "gpt-6-luna", store: false, reasoning: { effort: "none" }, temperature: 0.2,
     max_output_tokens: 1500,
     instructions: SYSTEM_PROMPT,
     input: [{ role: "user", content: JSON.stringify(data) }],
