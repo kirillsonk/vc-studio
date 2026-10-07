@@ -42,7 +42,7 @@ async function walk(dir) {
 await walk("src");
 await walk("server");
 await walk("docs");
-for (const file of ["BRAND.md", "README.md", "AGENTS.md"]) await scan(file);
+for (const file of ["BRAND.md", "README.md", "AGENTS.md", "CLAUDE.md", "HANDOFF.md"]) await scan(file);
 if (violations.length) {
   console.error(violations.join("\n"));
   process.exitCode = 1;
