@@ -143,7 +143,7 @@ export function CostChart() {
         </div>
         <div className="econ-row">
           <div className="econ-name">
-            <span>Сборка</span>
+            <span className="wordmark econ-wordmark" aria-label="Сборка">сборка<span className="wordmark-mark" aria-hidden="true" /></span>
             <small>Дизайн, сопровождение и токены AI</small>
           </div>
           {bar("studio")}
@@ -163,7 +163,8 @@ export function CostChart() {
       <div className="econ-result">
         <strong data-num>×{Math.round(REGULAR / STUDIO)}</strong>
         <div>
-          <span data-num>{money(saved)} остаются на другие задачи</span>
+          <span>В пять раз дешевле студий с почасовой разработкой</span>
+          <p data-num>У вас остается {money(saved)} на другие задачи</p>
           <small>Условный пример, не тариф и не средние цены рынка</small>
         </div>
       </div>

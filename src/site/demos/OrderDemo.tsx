@@ -52,7 +52,7 @@ export function OrderDemo() {
   return <div className="order-demo" ref={stage}>
     <div className="order-nav"><div className="econ-tabs demo-tabs" role="tablist" aria-label="Путь заказа">
       {([['product','3D-конфигуратор'],['order','Магазин и CRM']] as const).map(([id,label])=><button type="button" role="tab" key={id} id={`demo-${id}-tab`} aria-controls={`demo-${id}-panel`} aria-selected={tab===id} tabIndex={tab===id?0:-1} className="econ-tab" onClick={()=>go(id)} onKeyDown={tabKey}>{label}{id==='order'&&count>0&&<span className="order-count">{count}</span>}</button>)}
-    </div><span className="order-demo-label">Живое демо</span></div>
+    </div></div>
     <div id="demo-product-panel" role="tabpanel" aria-labelledby="demo-product-tab" hidden={tab!=='product'}>
       {tab==='product'&&<Configurator selection={selection} onChange={setSelection} onAdd={()=>{add(bottleProduct(selection));go('order');}}/>}
     </div>

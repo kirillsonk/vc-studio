@@ -17,6 +17,13 @@ export const metadata: Metadata = {
   metadataBase: new URL('https://sborkadigital.ru'),
   title: 'Сборка | Сайты и интерактив на скорости AI',
   description: 'Разрабатываем сайты, спецпроекты и веб-сервисы с AI для агентств и бизнеса. Дизайн, разработка, интеграции и запуск',
+  icons: {
+    icon: [
+      { url: '/favicon.ico', sizes: '16x16 32x32 48x48' },
+      { url: '/icon.svg', type: 'image/svg+xml', sizes: 'any' },
+    ],
+    apple: [{ url: '/apple-touch-icon.png', sizes: '180x180' }],
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

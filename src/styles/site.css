@@ -1548,9 +1548,6 @@ svg {
     gap: 16px;
     font-size: 14px;
   }
-  .footer-bottom > span:nth-child(2) {
-    display: none;
-  }
   .footer-bottom > a {
     margin-left: auto;
   }

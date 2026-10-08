@@ -32,7 +32,6 @@ export function Footer() {
         </div>
         <div className="footer-bottom">
           <span>© {new Date().getFullYear()} {BRAND_NAME}</span>
-          <span>Дизайн с характером. Разработка с ответственностью</span>
           <a href="#main">Наверх ↑</a>
         </div>
       </Container>
