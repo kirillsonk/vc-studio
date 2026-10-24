@@ -219,6 +219,24 @@ await test("analytics sends only allowed goals and sanitized page metadata",asyn
     window.ym=()=>{throw Error('blocked');};assert.doesNotThrow(()=>analytics.trackGoal('lead_sent'));
   } finally {delete globalThis.window;delete globalThis.location;delete globalThis.document;}
 });
+await test('campaign attribution preserves approved labels without leaking arbitrary query data',async()=>{
+  const analytics=await import(pathToFileURL(join(temp,'metrika.js'))+'?attribution');
+  const search='?utm_source=yandex&utm_medium=cpc&utm_campaign=sborka_smoke_v1&utm_content=ai_price&yclid=1234567890123456789&email=private@example.com&utm_term=private@example.com&token=secret';
+  const expected='?utm_source=yandex&utm_medium=cpc&utm_campaign=sborka_smoke_v1&utm_content=ai_price&yclid=1234567890123456789';
+  assert.equal(analytics.campaignQuery(search),expected);
+  assert.equal(analytics.campaignQuery('?utm_campaign=private@example.com&yclid=private@example.com'), '');
+  assert.equal(analytics.campaignQuery('?utm_source=yandex&utm_source=other&yclid=123&yclid=456'), '');
+  const calls=[];
+  globalThis.window={ym:(...args)=>calls.push(args)};
+  globalThis.location={origin:'https://site.example',search};
+  globalThis.document={referrer:'',createElement:()=>({}),head:{appendChild:()=>{}}};
+  try {
+    analytics.startMetrika(113480948,'/');
+    assert.equal(calls.find(c=>c[1]==='hit')[2],'https://site.example/'+expected);
+    assert.equal(JSON.stringify(calls).includes('private'),false);
+    assert.equal(JSON.stringify(calls).includes('secret'),false);
+  } finally {delete globalThis.window;delete globalThis.location;delete globalThis.document;}
+});
 const {hasAi,hasTelegram,requestAi}=await import(pathToFileURL(join(temp,'upstream.js')));
 const relayEnv={RELAY_URL:'https://relay.example',RELAY_SECRET:'r'.repeat(48),RELAY_CLIENT:'sborka',OPENAI_API_KEY:'must-stay-local',TELEGRAM_BOT_TOKEN:'must-stay-local',TELEGRAM_CHAT_ID:'-ignored'};
 await test('relay routes AI with full conversation, strict schema and no upstream credentials',async()=>{

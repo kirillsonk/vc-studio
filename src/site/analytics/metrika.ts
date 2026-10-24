@@ -8,6 +8,25 @@ let counter:number|null=null;
 let initialized=false;
 let pending:Goal[]=[];
 let lastPath='';
+// Only our fixed campaign labels may enter analytics. Never forward arbitrary
+// query values, search terms, contact fields or the intake fragment.
+export function campaignQuery(search:string):string {
+  const source=new URLSearchParams(search);
+  const safe=new URLSearchParams();
+  const labels:Record<string,readonly string[]>={
+    utm_source:['yandex'],utm_medium:['cpc'],
+    utm_campaign:['sborka_smoke_v1'],
+    utm_content:['ai_price','clear_estimate','control','qa'],
+  };
+  for(const [key,values] of Object.entries(labels)) {
+    const value=source.get(key);
+    if(source.getAll(key).length===1 && value && values.includes(value))safe.set(key,value);
+  }
+  // Direct's opaque click identifier is needed for ad attribution.
+  const click=source.get('yclid');
+  if(source.getAll('yclid').length===1 && click && /^\d{1,30}$/.test(click))safe.set('yclid',click);
+  return safe.size?`?${safe.toString()}`:'';
+}
 function send(...args:unknown[]) { try {window.ym?.(...args);} catch { /* Analytics must never interrupt checkout or intake */ } }
 export function validCounter(value:unknown):number|null {
   if(!/^[1-9]\d{0,11}$/.test(String(value)))return null;
@@ -21,12 +40,12 @@ export function trackGoal(goal:Goal) {
 }
 export function pageView(path:string) {
   if(!counter||path===lastPath)return;
-  // Site routes are fixed; do not forward query strings, hashes or arbitrary paths.
+  // Site routes are fixed; only explicitly allowed campaign markers survive.
   const safePath=['/','/case','/kit','/report'].includes(path)?path:'/';
   lastPath=path;
   let referer='';
   try {referer=document.referrer?new URL(document.referrer).origin:'';}catch{}
-  send(counter,'hit',location.origin+safePath,{referer,title:'Сборка'});
+  send(counter,'hit',location.origin+safePath+campaignQuery(location.search||''),{referer,title:'Сборка'});
 }
 export function startMetrika(value:unknown,path:string) {
   if(initialized)return;
