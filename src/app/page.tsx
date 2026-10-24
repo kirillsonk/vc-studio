@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { Hero } from "@/site/sections/Hero";
 import { Cases } from "@/site/sections/Cases";
 import { WhatWeDo } from "@/site/sections/WhatWeDo";
@@ -9,6 +10,23 @@ import { FAQ } from "@/site/sections/FAQ";
 import { Intake } from "@/site/sections/Intake";
 import { ScrollReveal } from "@/site/ScrollReveal";
 import { FloatingContact } from "@/site/FloatingContact";
+
+const title = "Сборка | Разработка сайтов, лендингов и сервисов с AI";
+const description = "Разрабатываем сайты и небольшие сервисы с AI. Показываем расходы на AI и нашу работу отдельно. Проектирование, проверку и запуск берем на себя";
+export const metadata: Metadata = {
+  title,
+  description,
+  alternates: { canonical: "https://sborkadigital.ru/" },
+  openGraph: {
+    type: "website",
+    locale: "ru_RU",
+    siteName: "Сборка",
+    url: "https://sborkadigital.ru/",
+    title,
+    description,
+  },
+};
+
 export default function HomePage() {
   return (
     <main id="main">
