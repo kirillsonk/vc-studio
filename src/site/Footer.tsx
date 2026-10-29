@@ -12,7 +12,7 @@ export function Footer() {
           <p>
             <span>AI ускоряет код.</span>
             <br />
-            Мы отвечаем за продукт
+            <span>Мы отвечаем за продукт.</span>
           </p>
           <div className="footer-contacts">
             {STUDIO_EMAIL && (

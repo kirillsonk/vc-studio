@@ -17,7 +17,7 @@ export function Hero() {
               <span>На скорости AI</span>
             </h1>
             <p className="hero-lead">
-              Создаем сайты и сервисы с AI, чтобы вы меньше платили за разработку
+              Создаем сайты и сервисы с ИИ, чтобы вы меньше платили за разработку
             </p>
             <div className="hero-actions">
               <Link className="action action-primary" href="/#intake">

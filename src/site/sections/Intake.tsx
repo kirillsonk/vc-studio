@@ -606,6 +606,7 @@ export function Intake() {
             </div>
           </div>
 
+          <div className="intake-conversation">
           <div className="ci-window ym-hide-content ym-disable-clickmap" data-phase={phase}>
             <div className="ci-head">
               <span className="assistant-avatar" aria-hidden="true">
@@ -752,7 +753,6 @@ export function Intake() {
                   )}
                 </div>
               )}
-              {phase === "compose" && <p className="ci-note">Можно сразу добавить контакт для связи. Заявку отправим после вашего подтверждения</p>}
               {phase === "contact" && knownContacts.length > 0 && <p className="ci-note">Для связи: {knownContacts.map(c => c.value).join(", ")}</p>}
               {phase === "dialog" && hint && <p className="ci-note is-error" role="alert">{hint}</p>}
               {(phase === "contact" || phase === "review") && (
@@ -773,6 +773,8 @@ export function Intake() {
                 </p>
               )}
             </div>
+          </div>
+          {phase === "compose" && <p className="intake-outside-note">Можно сразу добавить контакт для связи. Заявку отправим после вашего подтверждения</p>}
           </div>
         </div>
       </Container>
