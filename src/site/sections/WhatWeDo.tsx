@@ -26,7 +26,7 @@ const CARDS: Array<{ text: string; tags: string; icon: React.ReactNode }> = [
     ),
   },
   {
-    text: "Чтобы AI мог работать с вашими системами: получать данные, находить информацию и выполнять согласованные действия",
+    text: "Чтобы AI мог работать с вашими системами, получать данные, находить информацию и выполнять согласованные действия",
     tags: "MCP · API · CRM",
     icon: (
       <>
@@ -71,9 +71,6 @@ export function WhatWeDo() {
   return (
     <section id="what" className="editorial-section carousel-section">
       <Container>
-        <div className="section-kicker">
-          <span>Что мы делаем</span>
-        </div>
         <div className="section-heading">
           <h2>
             От сайта

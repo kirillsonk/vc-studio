@@ -13,3 +13,5 @@ Permanent TOV rules requested by the owner:
 - Keep the current demo until the owner chooses a replacement. AI intake uses OpenAI with a local fallback. Telegram and free-text contact collection are now authorized; read docs/intake-status.md for delivery setup and the deferred operator policy. Do not change its contract without updating docs/intake-api.md.
 
 Run npm run check:copy, npm run typecheck and npm run build before pushing. Check responsive layout and changed interactions in the browser. Use ordinary git push; do not store credentials in source files or Git URLs.
+
+Авторское правило от 29.10.2026: не использовать двоеточие как декоративную паузу или замену связному предложению. Оставлять его только при явной грамматической необходимости, например перед настоящим перечислением. Предпочитать естественные связки «что», «как», «чтобы». На главной нет мелких надзаголовков. CTA примеров называется «К примерам».

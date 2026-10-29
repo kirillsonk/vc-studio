@@ -17,9 +17,6 @@ export function Approach() {
   return (
     <section id="approach" className="editorial-section approach-section">
       <Container>
-        <div className="section-kicker">
-          <span>Что изменилось</span>
-        </div>
         <div className="section-heading">
           <h2>
             Почему вы

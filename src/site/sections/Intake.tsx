@@ -584,9 +584,6 @@ export function Intake() {
   return (
     <section id="intake" className="editorial-section intake-section">
       <Container>
-        <div className="section-kicker">
-          <span>Новый проект</span>
-        </div>
         <div className="intake-shell">
           <div className="intake-aside">
             <h2>
@@ -594,7 +591,7 @@ export function Intake() {
               <br />
               что хотите сделать
             </h2>
-            <p>Расскажите своими словами, какую задачу нужно решить. Ассистент уточнит детали и соберет бриф, а мы предложим способ реализации и рассчитаем стоимость</p>
+            <p>Опишите задачу. Ассистент уточнит детали, а мы предложим решение и рассчитаем стоимость</p>
             <div className="intake-contact">
               {STUDIO_TELEGRAM && (
                 <a className="text-link" href={`https://t.me/${STUDIO_TELEGRAM.replace("@", "")}`} target="_blank" rel="noreferrer">
@@ -609,7 +606,7 @@ export function Intake() {
             </div>
           </div>
 
-          <div className="ci-window ym-hide-content ym-disable-clickmap">
+          <div className="ci-window ym-hide-content ym-disable-clickmap" data-phase={phase}>
             <div className="ci-head">
               <span className="assistant-avatar" aria-hidden="true">
                 <ThinkingAtom size={30} still={!thinking} />

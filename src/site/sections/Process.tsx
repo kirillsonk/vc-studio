@@ -46,9 +46,6 @@ export function Process() {
   return (
     <section id="process" className="editorial-section process-section">
       <Container>
-        <div className="section-kicker">
-          <span>Как мы работаем</span>
-        </div>
         <div className="section-heading">
           <h2>
             Вы ставите задачу.

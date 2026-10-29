@@ -885,3 +885,33 @@
 .order-demo .configurator { background:var(--surface); border:1px solid var(--line); border-radius:4px; overflow:hidden; }
 
 .order-demo, .order-system { scroll-margin-top:110px; }
+
+/* Mobile editorial finish and touch-first conversation. */
+.mobile-ribbons { display: none; }
+@media (max-width: 900px) {
+ .hero { position: relative; isolation: isolate; overflow: hidden; }
+ .mobile-ribbons { display: block; position: absolute; width: 100%; height: 100%; inset: 0; z-index: -1; opacity: .18; stroke-width: 2; pointer-events: none; animation: ribbon-drift 12s ease-in-out infinite alternate; }
+ .hero > .container { position: relative; }
+ .hero h1, .hero-lead { position: relative; }
+ .ci-window { margin: 0; border-radius: 20px; box-shadow: none; grid-template-rows: auto clamp(300px, 46svh, 420px) auto; }
+ .ci-window[data-phase="compose"] { grid-template-rows: auto auto auto; }
+ .ci-window[data-phase="compose"] .ci-log { min-height: 140px; }
+ .ci-head { padding: 16px; gap: 10px; }
+ .ci-log { padding: 18px 16px; gap: 14px; }
+ .ci-msg { max-width: 92%; font-size: 16px; padding: 12px 14px; }
+ .ci-studio { border: 0; }
+ .ci-foot { padding: 14px 12px 18px; gap: 12px; }
+ .ci-bar { border-radius: 16px; padding: 10px; }
+ .ci-bar textarea { font-size: 16px; min-height: 48px; }
+ .ci-chips { display: grid; grid-template-rows: repeat(2, auto); grid-auto-flow: column; grid-auto-columns: max-content; overflow-x: auto; padding: 2px 0 10px; scrollbar-width: thin; gap: 8px; }
+ .ci-chips button { max-width: 220px; min-height: 44px; border-radius: 10px; }
+ .ci-options button { min-height: 44px; }
+ .ci-head .ci-link { font-size: 13px; white-space: normal; max-width: 70px; }
+ .intake-aside > p { margin-bottom: 24px; }
+}
+@media (max-width: 650px) {
+ .hero-actions .text-link { width: 100%; justify-content: space-between; min-height: 52px; }
+ .intake-shell { gap: 24px; }
+}
+@keyframes ribbon-drift { from { transform: translateY(-8px) rotate(-2deg); } to { transform: translateY(10px) rotate(2deg); } }
+@media (prefers-reduced-motion: reduce) { .mobile-ribbons { animation: none; } }

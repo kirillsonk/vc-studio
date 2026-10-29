@@ -57,9 +57,6 @@ export function Clients() {
   return (
     <section id="clients" className="editorial-section">
       <Container>
-        <div className="section-kicker">
-          <span>С кем работаем</span>
-        </div>
         <div className="section-heading">
           <h2>
             Начнем с того,
