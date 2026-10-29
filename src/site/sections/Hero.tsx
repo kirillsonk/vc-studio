@@ -9,7 +9,7 @@ export function Hero() {
     <section className="hero" aria-labelledby="hero-title">
       <Container>
         <div className="hero-eyebrow">
-          <span>Сайты, спецпроекты и сервисы для агентств и бизнеса</span>
+          <span>Сайты и сервисы для бизнеса</span>
         </div>
         <div className="hero-grid">
           <div className="hero-copy">
@@ -19,9 +19,7 @@ export function Hero() {
               <span>На скорости AI</span>
             </h1>
             <p className="hero-lead">
-              Проектируем дизайн и разрабатываем с AI. Вайбкодинг сокращает
-              затраты на написание кода. Сценарии, технические решения и
-              проверку берем на себя
+              Создаем сайты и сервисы с AI, чтобы вы меньше платили за разработку
             </p>
             <div className="hero-actions">
               <Link className="action action-primary" href="/#intake">
@@ -35,9 +33,9 @@ export function Hero() {
           <VCMotion />
         </div>
         <div className="hero-baseline">
-          <span>От небольшой задачи до полноценного продукта</span>
+          <span>От вашей идеи до работающего проекта</span>
           <a href="#economics">
-            За счет чего экономим <Arrow diagonal />
+            Почему вы платите меньше <Arrow diagonal />
           </a>
         </div>
       </Container>

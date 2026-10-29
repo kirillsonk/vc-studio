@@ -14,7 +14,7 @@ const TOPICS: Array<{ id: Kind; label: string; regular: number; studio: number; 
     studio: 30000,
     regularName: "Дизайн, 20 часов",
     studioName: "Дизайн",
-    note: "Варианты интерфейса собираем с AI, дизайнер выбирает лучшее и доводит до чистового",
+    note: "AI помогает быстрее собрать варианты, а мы выбираем и дорабатываем дизайн под вашу задачу. Вы оплачиваете работу над нужным решением",
   },
   {
     id: "team",
@@ -23,7 +23,7 @@ const TOPICS: Array<{ id: Kind; label: string; regular: number; studio: number; 
     studio: 58000,
     regularName: "Ведение и QA",
     studioName: "Сопровождение",
-    note: "Здесь наша основная работа: задачи для AI, архитектура, проверка кода и запуск",
+    note: "Здесь работа, за которую мы отвечаем: понять вашу задачу, выбрать техническое решение, проверить код и довести проект до запуска",
   },
   {
     id: "code",
@@ -32,7 +32,7 @@ const TOPICS: Array<{ id: Kind; label: string; regular: number; studio: number; 
     studio: 9000,
     regularName: "Разработка, 67 часов",
     studioName: "Токены AI",
-    note: "Код пишет AI. Платите за фактический расход токенов, а не за часы разработчика",
+    note: "AI берет на себя написание кода. В этой части сметы вы оплачиваете его фактическое использование, а работу команды видите отдельно",
   },
 ];
 const ORDER: Kind[] = ["design", "team", "code"];
@@ -135,7 +135,7 @@ export function CostChart() {
       <div className="econ-rows">
         <div className="econ-row">
           <div className="econ-name">
-            <span>Обычная разработка</span>
+            <span>Почасовая модель</span>
             <small>97 часов по 5 000 ₽</small>
           </div>
           {bar("regular")}
@@ -163,9 +163,9 @@ export function CostChart() {
       <div className="econ-result">
         <strong data-num>×{Math.round(REGULAR / STUDIO)}</strong>
         <div>
-          <span>В пять раз дешевле студий с почасовой разработкой</span>
-          <p data-num>У вас остается {money(saved)} на другие задачи</p>
-          <small>Условный пример, не тариф и не средние цены рынка</small>
+          <span>В этом примере вы платите в пять раз меньше</span>
+          <p data-num>У вас остается {money(saved)} на рекламу, развитие и другие задачи</p>
+          <small>Условный расчет двух подходов, не тариф и не средние цены рынка</small>
         </div>
       </div>
     </div>

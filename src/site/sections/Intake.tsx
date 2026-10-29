@@ -594,7 +594,7 @@ export function Intake() {
               <br />
               что хотите сделать
             </h2>
-            <p>Расскажите о проекте своими словами. Ассистент уточнит детали и соберет бриф, а мы оценим задачу</p>
+            <p>Расскажите своими словами, какую задачу нужно решить. Ассистент уточнит детали и соберет бриф, а мы предложим способ реализации и рассчитаем стоимость</p>
             <div className="intake-contact">
               {STUDIO_TELEGRAM && (
                 <a className="text-link" href={`https://t.me/${STUDIO_TELEGRAM.replace("@", "")}`} target="_blank" rel="noreferrer">

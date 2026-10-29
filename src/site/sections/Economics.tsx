@@ -8,15 +8,15 @@ export function Economics() {
     <section id="economics" className="editorial-section">
       <Container>
         <div className="section-kicker">
-          <span>Экономика проекта</span>
+          <span>Из чего складывается цена</span>
         </div>
         <div className="section-heading">
           <h2>
-            Вайбкодим открыто.
+            Вы видите,
             <br />
-            Показываем расходы
+            за что платите
           </h2>
-          <p>Вместо часов разработчика платите за токены AI. Дизайн и ведение проекта считаем отдельно</p>
+          <p>В расчете отдельно показываем расходы на AI и нашу работу: дизайн, технические решения, проверку и запуск. Так вы понимаете, где возникает экономия и что входит в стоимость проекта</p>
         </div>
         <CostChart />
         <div className="econ-cta">

@@ -12,7 +12,7 @@ import { ScrollReveal } from "@/site/ScrollReveal";
 import { FloatingContact } from "@/site/FloatingContact";
 
 const title = "Сборка | Разработка сайтов, лендингов и сервисов с AI";
-const description = "Разрабатываем сайты и небольшие сервисы с AI. Показываем расходы на AI и нашу работу отдельно. Проектирование, проверку и запуск берем на себя";
+const description = "Создаем сайты и сервисы с AI, чтобы вы тратили меньше на разработку. От идеи и дизайна до запуска: понятная смета, проверка и настройка инфраструктуры";
 export const metadata: Metadata = {
   title,
   description,
