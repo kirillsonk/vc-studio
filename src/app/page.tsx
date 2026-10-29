@@ -11,7 +11,7 @@ import { Intake } from "@/site/sections/Intake";
 import { ScrollReveal } from "@/site/ScrollReveal";
 import { FloatingContact } from "@/site/FloatingContact";
 
-const title = "Сборка | Разработка сайтов, лендингов и сервисов с AI";
+const title = "Сборка. Цифровые продукты и AI-разработка";
 const description = "Создаем сайты и сервисы с AI, чтобы вы тратили меньше на разработку. От идеи и дизайна до запуска: понятная смета, проверка и настройка инфраструктуры";
 export const metadata: Metadata = {
   title,
@@ -30,6 +30,14 @@ export const metadata: Metadata = {
 export default function HomePage() {
   return (
     <main id="main">
+      <div className="mobile-ribbons" aria-hidden="true">
+        <svg viewBox="0 0 400 900" preserveAspectRatio="xMidYMid slice" fill="none">
+          <g className="mobile-ribbon-drift">
+            {[0, 12, 24].map((offset) => <path key={offset} transform={`translate(${offset} 0)`} d="M450 -120C180 40 510 180 310 350S-90 500 70 690S470 820 290 1040" stroke={offset === 0 ? "#C94320" : "#9CA79A"} />)}
+            <path className="mobile-ribbon-light" d="M450 -120C180 40 510 180 310 350S-90 500 70 690S470 820 290 1040" stroke="#C94320" />
+          </g>
+        </svg>
+      </div>
       <ScrollReveal />
       <Hero />
       <WhatWeDo />

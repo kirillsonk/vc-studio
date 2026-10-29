@@ -7,7 +7,6 @@ import { VCMotion } from "../VCMotion";
 export function Hero() {
   return (
     <section className="hero" aria-labelledby="hero-title">
-      <svg className="mobile-ribbons" viewBox="0 0 400 520" fill="none" aria-hidden="true"><g strokeLinecap="round"><path d="M440 0C160 70 460 270 270 365S-40 380-60 530" stroke="#C94320"/><path d="M450 8C170 78 470 278 280 373S-30 388-50 538" stroke="#B7BDB4"/><path d="M460 16C180 86 480 286 290 381S-20 396-40 546" stroke="#B7BDB4"/></g></svg>
       <Container>
         <div className="hero-grid">
           <div className="hero-copy">

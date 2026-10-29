@@ -16,8 +16,22 @@ export function Approach() {
         {STORY.map((item, index) => <button type="button" key={item.label} aria-pressed={step === index} onClick={() => setStep(index)}><span aria-hidden="true">0{index + 1}</span>{item.label}</button>)}
       </div>
       <div className="story-slide" key={step} aria-live="polite">
-        <div className={`story-art story-art-${step}`} aria-hidden="true">
-          <svg viewBox="0 0 360 200" fill="none"><path className="story-track" d="M20 44H105Q140 44 160 100T220 156H340M20 100H340M20 156H105Q140 156 160 100T220 44H340"/><path className="story-flow" d="M20 156H105Q140 156 160 100T220 44H340"/><circle cx="180" cy="100" r="28"/><path d="m168 100 8 8 16-18"/></svg>
+        <div className={`story-art story-art-${step}`}>
+          {step === 0 && <div className="approach-diagram responsibility-diagram">
+            <div className="diagram-role diagram-role-ai"><span className="diagram-symbol" aria-hidden="true">{ "</>" }</span><strong>ИИ</strong><span>Написание кода</span></div>
+            <div className="diagram-plus" aria-hidden="true">+</div>
+            <div className="diagram-role diagram-role-team"><span className="diagram-symbol" aria-hidden="true">✓</span><strong>Команда</strong><span>Решения и проверка</span></div>
+            <div className="diagram-conclusion">Меньше ручной работы<br/><strong>Больше внимания задаче</strong></div>
+          </div>}
+          {step === 1 && <div className="approach-diagram stages-diagram">
+            {["Задача", "Дизайн", "Разработка", "Тестирование"].map((label, index) => <div className="diagram-stage" key={label} style={{animationDelay: `${index * .14}s`}}><span className="stage-mark" aria-hidden="true">✓</span><span>{label}</span><span className="stage-line" aria-hidden="true"/></div>)}
+            <div className="diagram-conclusion">Компактная команда<br/><strong>Все этапы на месте</strong></div>
+          </div>}
+          {step === 2 && <div className="approach-diagram launch-diagram">
+            <div className="launch-items">{["Домен", "Сервер", "Интеграции"].map((label, index) => <div key={label} style={{animationDelay: `${index * .14}s`}}><span>{label}</span><span aria-hidden="true">✓</span></div>)}</div>
+            <div className="launch-connection" aria-hidden="true"/>
+            <div className="launch-result"><span className="launch-dot" aria-hidden="true"/><strong>Проект работает</strong><span>Можно принимать клиентов</span></div>
+          </div>}
         </div>
         <div className="story-copy"><h3>{story.title}</h3><p>{story.text}</p><strong>{story.result}</strong></div>
       </div>

@@ -16,8 +16,12 @@
   scrollbar-width: none;
   /* Bleed to the right edge of the viewport, content stays on the grid */
   margin-right: calc(50% - 50vw);
-  padding: 4px calc(50vw - 50%) 8px 0;
-  scroll-padding-left: 0;
+  /* Keep hover lift and soft shadows inside the scroll viewport. */
+  margin-top: -16px;
+  margin-bottom: -32px;
+  margin-left: -24px;
+  padding: 20px calc(50vw - 50%) 40px 24px;
+  scroll-padding-left: 24px;
   outline-offset: 6px;
 }
 .carousel-track::-webkit-scrollbar { display: none; }
@@ -889,8 +893,11 @@
 /* Mobile editorial finish and touch-first conversation. */
 .mobile-ribbons { display: none; }
 @media (max-width: 900px) {
- .hero { position: relative; isolation: isolate; overflow: hidden; }
- .mobile-ribbons { display: block; position: absolute; width: 100%; height: 100%; inset: 0; z-index: -1; opacity: .18; stroke-width: 2; pointer-events: none; animation: ribbon-drift 12s ease-in-out infinite alternate; }
+ #main { position: relative; isolation: isolate; }
+ .mobile-ribbons { display: block; position: fixed; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; opacity: .18; }
+ .mobile-ribbons svg { width: 100%; height: 100%; stroke-width: 1.8; }
+ .mobile-ribbon-drift { transform-origin: center; animation: ribbon-drift 16s ease-in-out infinite alternate; }
+ .mobile-ribbon-light { stroke-width: 3; stroke-dasharray: 100 1700; animation: ribbon-light 14s linear infinite; }
  .hero > .container { position: relative; }
  .hero h1, .hero-lead { position: relative; }
  .ci-window { margin: 0; border-radius: 20px; box-shadow: none; grid-template-rows: auto clamp(300px, 46svh, 420px) auto; }
@@ -903,8 +910,8 @@
  .ci-foot { padding: 14px 12px 18px; gap: 12px; }
  .ci-bar { border-radius: 16px; padding: 10px; }
  .ci-bar textarea { font-size: 16px; min-height: 48px; }
- .ci-chips { display: grid; grid-template-rows: repeat(2, auto); grid-auto-flow: column; grid-auto-columns: max-content; overflow-x: auto; padding: 2px 0 10px; scrollbar-width: thin; gap: 8px; }
- .ci-chips button { max-width: 220px; min-height: 44px; border-radius: 10px; }
+ .ci-chips { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: none; grid-auto-flow: row; overflow: visible; padding: 2px 0 10px; gap: 8px; }
+ .ci-chips button { width: 100%; max-width: 100%; min-height: 48px; border-radius: 10px; white-space: normal; overflow-wrap: anywhere; }
  .ci-options button { min-height: 44px; }
  .ci-head .ci-link { font-size: 13px; white-space: normal; max-width: 70px; }
  .intake-aside > p { margin-bottom: 24px; }
@@ -913,8 +920,9 @@
  .hero-actions .text-link { width: 100%; justify-content: space-between; min-height: 52px; }
  .intake-shell { gap: 24px; }
 }
-@keyframes ribbon-drift { from { transform: translateY(-8px) rotate(-2deg); } to { transform: translateY(10px) rotate(2deg); } }
-@media (prefers-reduced-motion: reduce) { .mobile-ribbons { animation: none; } }
+@keyframes ribbon-drift { from { transform: translate(-10px,-26px); } to { transform: translate(12px,26px); } }
+@keyframes ribbon-light { to { stroke-dashoffset: -1800; } }
+@media (prefers-reduced-motion: reduce) { .mobile-ribbon-drift, .mobile-ribbon-light { animation: none; } }
 
 .intake-conversation { min-width: 0; }
 .intake-outside-note { margin: 14px 4px 0; color: var(--text-3); font-size: 14px; line-height: 1.5; }
@@ -923,12 +931,32 @@
 .story-steps button { display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-start; text-align: left; padding: 12px 0; border: 0; border-top: 2px solid var(--line); background: none; font: inherit; color: var(--text-2); cursor: pointer; }
 .story-steps button[aria-pressed="true"] { border-color: var(--brand); color: var(--ink); }
 .story-steps button span { display: block; font-size: 13px; margin-bottom: 8px; color: var(--brand); }
-.story-slide { display: grid; grid-template-columns: 1fr 1fr; align-items: center; gap: 48px; min-height: 300px; animation: story-enter .4s ease both; }
-.story-art svg { width: 100%; stroke: var(--brand); stroke-width: 2; }
-.story-track { stroke: var(--line-strong); }
-.story-flow { stroke-dasharray: 60 400; animation: story-flow 5s linear infinite; }
-.story-art-1 svg { transform: rotate(180deg); }
-.story-art-2 .story-flow { stroke-dasharray: none; animation: none; }
+.story-slide { display: grid; grid-template-columns: 1fr 1fr; align-items: center; gap: 48px; padding-bottom: 28px; min-height: 300px; animation: story-enter .4s ease both; }
+.story-art { min-width: 0; padding: 28px 0; }
+.approach-diagram { max-width: 430px; width: 100%; margin: auto; color: var(--ink); }
+.responsibility-diagram { display: grid; grid-template-columns: minmax(0,1fr) 28px minmax(0,1fr); align-items: stretch; }
+.diagram-role { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; min-width: 0; padding: 24px 20px; background: var(--canvas); border: 1px solid var(--line); animation: diagram-arrive .6s ease both; }
+.diagram-role-ai { background: #f9eee8; border-color: #eac9b9; }
+.diagram-role-team { animation-delay: .18s; }
+.diagram-symbol { font-size: 30px; line-height: 1; color: var(--brand); margin-bottom: 14px; }
+.diagram-role strong { font-size: 23px; font-weight: 500; }
+.diagram-role > span:last-child { color: var(--text-2); font-size: 14px; line-height: 1.4; }
+.diagram-plus { align-self: center; text-align: center; font-size: 24px; color: var(--text-3); }
+.diagram-conclusion { grid-column: 1 / -1; margin-top: 22px; text-align: center; color: var(--text-2); font-size: 14px; line-height: 1.6; }
+.diagram-conclusion strong { font-weight: 500; color: var(--ink); }
+.stages-diagram { padding: 0 16px; }
+.diagram-stage { display: flex; align-items: center; gap: 14px; padding: 13px 0; border-bottom: 1px solid var(--line); font-size: 18px; animation: diagram-arrive .55s ease both; }
+.stage-mark { display: grid; place-items: center; width: 26px; height: 26px; flex-shrink: 0; border-radius: 50%; color: var(--brand); background: #f9eee8; font-size: 16px; }
+.stage-line { height: 2px; width: 28px; margin-left: auto; background: #a8b098; }
+.launch-items { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 8px; }
+.launch-items > div { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 16px 5px; background: var(--canvas); border: 1px solid var(--line); font-size: 14px; animation: diagram-arrive .5s ease both; }
+.launch-items > div > span:last-child { color: var(--brand); }
+.launch-connection { width: 1px; height: 28px; background: var(--line-strong); margin: auto; }
+.launch-result { padding: 22px 14px; background: #252a25; color: #fff; display: grid; grid-template-columns: 8px auto; justify-content: center; align-items: center; gap: 8px 10px; animation: diagram-arrive .6s .45s ease both; }
+.launch-result strong { font-size: 21px; font-weight: 500; }
+.launch-result > span:last-child { grid-column: 2; font-size: 13px; color: #d1d6cc; }
+.launch-dot { width: 7px; height: 7px; background: #b4d2a5; border-radius: 50%; }
+@keyframes diagram-arrive { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 .story-copy h3 { font-size: clamp(26px,3vw,38px); line-height: 1.15; margin-bottom: 20px; letter-spacing: -.04em; }
 .story-copy p { font-size: 18px; line-height: 1.6; color: var(--text-2); }
 .story-copy strong { display: block; margin-top: 24px; font-weight: 500; font-size: 17px; }
@@ -946,10 +974,20 @@
  .story-steps { gap: 10px; }
  .story-steps button { font-size: 13px; min-height: 74px; }
  .story-slide { display: flex; flex-direction: column; gap: 8px; align-items: stretch; min-height: 350px; }
- .story-art { height: 100px; }
- .story-art svg { height: 100px; }
+ .story-art { padding: 8px 0 16px; }
+ .diagram-role { padding: 20px 12px; }
+ .diagram-role strong { font-size: 20px; }
+ .launch-items > div { font-size: 12px; }
  .story-copy h3 { font-size: 28px; margin-bottom: 16px; }
  .story-copy p { font-size: 17px; }
  .story-copy strong { margin-top: 18px; font-size: 16px; }
 }
-@media(prefers-reduced-motion:reduce) { .story-slide,.story-flow { animation: none; } }
+@media(prefers-reduced-motion:reduce) { .story-slide, .diagram-role, .diagram-stage, .launch-items > div, .launch-result { animation: none; } }
+
+@media (max-width: 359px) { .ci-chips { grid-template-columns: minmax(0, 1fr); } }
+
+/* Keep the longer cost topic readable on narrow screens. */
+#economics .econ-tab { white-space: normal; }
+#economics .econ-tab > span:last-child { min-width: 0; hyphens: manual; }
+.econ-result { flex-direction: column; align-items: flex-start; gap: 16px; }
+.econ-result > .econ-result-heading { font-size: clamp(28px, 4vw, 46px); line-height: 1.12; letter-spacing: -.04em; }

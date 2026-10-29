@@ -18,10 +18,10 @@ const TOPICS: Array<{ id: Kind; label: string; regular: number; studio: number; 
   },
   {
     id: "team",
-    label: "Ведение проекта",
+    label: "Сопровождение",
     regular: 50000,
-    studio: 58000,
-    regularName: "Ведение и QA",
+    studio: 200000,
+    regularName: "Сопровождение и QA",
     studioName: "Сопровождение",
     note: "Мы помогаем разобраться в задаче, выбираем техническое решение, проверяем код и доводим проект до запуска",
   },
@@ -31,7 +31,7 @@ const TOPICS: Array<{ id: Kind; label: string; regular: number; studio: number; 
     regular: 335000,
     studio: 9000,
     regularName: "Разработка, 67 часов",
-    studioName: "Токены AI",
+    studioName: "Токены ИИ",
     note: "ИИ берет на себя написание кода. В этой части сметы вы оплачиваете его фактическое использование, а работу команды видите отдельно",
   },
 ];
@@ -127,7 +127,7 @@ export function CostChart() {
             onFocus={() => setActive(t.id)}
           >
             <span className="econ-dot" aria-hidden="true" />
-            {t.id === "team" ? <><span className="econ-label-full" aria-hidden="true">{t.label}</span><span className="econ-label-short" aria-hidden="true">Ведение</span></> : t.label}
+            <span>{t.id === "team" ? <>Сопро&shy;вождение</> : t.label}</span>
           </button>
         ))}
       </div>
@@ -144,7 +144,7 @@ export function CostChart() {
         <div className="econ-row">
           <div className="econ-name">
             <span className="wordmark econ-wordmark" aria-label="Сборка">сборка<span className="wordmark-mark" aria-hidden="true" /></span>
-            <small>Дизайн, сопровождение и токены AI</small>
+            <small>Дизайн, сопровождение и токены ИИ</small>
           </div>
           {bar("studio")}
           <strong className="econ-total econ-total-brand" data-num>{money(studio)}</strong>
@@ -161,9 +161,9 @@ export function CostChart() {
       </div>
 
       <div className="econ-result">
-        <strong data-num>×{Math.round(REGULAR / STUDIO)}</strong>
+        <strong className="econ-result-heading">Примерно в 2-3 раза дешевле</strong>
         <div>
-          <span>В этом примере вы платите в пять раз меньше</span>
+          <span>В этом примере стоимость ниже примерно вдвое</span>
           <p data-num>У вас остается {money(saved)} на рекламу, развитие и другие задачи</p>
           <small>Условный расчет двух подходов, не тариф и не средние цены рынка</small>
         </div>

@@ -6,6 +6,7 @@ export function FloatingContact() {
   useEffect(() => {
     const hero = document.querySelector(".hero");
     const demo = document.getElementById("cases");
+    const story = document.getElementById("approach");
     const intake = document.getElementById("intake");
     if (!hero || !intake || !("IntersectionObserver" in window)) return;
     const update = () => {
@@ -15,17 +16,20 @@ export function FloatingContact() {
       const heroRect = hero.getBoundingClientRect();
       const intakeRect = intake.getBoundingClientRect();
       const demoRect = demo?.getBoundingClientRect();
+      const storyRect = story?.getBoundingClientRect();
+      const inStory = storyRect && storyRect.top < window.innerHeight && storyRect.bottom > 0;
       const inDemo = demoRect && demoRect.top < window.innerHeight && demoRect.bottom > 0;
       setVisible(
         heroRect.bottom <= 0 &&
           intakeRect.top >= window.innerHeight &&
-          !editing && !inDemo,
+          !editing && !inDemo && !inStory,
       );
     };
     const observer = new IntersectionObserver(update, { threshold: 0 });
     observer.observe(hero);
     observer.observe(intake);
     if(demo)observer.observe(demo);
+    if(story)observer.observe(story);
     document.addEventListener("focusin", update);
     document.addEventListener("focusout", update);
     window.addEventListener("resize", update);
